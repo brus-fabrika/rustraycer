@@ -2,21 +2,41 @@
 pub struct Vec3d{pub x: f32, pub y: f32, pub z: f32}
 
 impl Vec3d {
+    pub fn clone(&self) -> Vec3d {
+
+        Vec3d{x: self.x, y: self.y, z: self.z}
+    }
+    
+    pub fn length_squared(&self) -> f32 {
+        self.x * self.x + self.y * self.y + self.z * self.z
+    }
+
+    pub fn length(&self) -> f32 {
+        self.length_squared().sqrt()
+    }
+
     /*pub fn add(&mut self, v: &Vec3d) -> &Self {
         self.x += v.x;
         self.y += v.y;
         self.z += v.z;
         self
     }*/
-    
+
+    pub fn unit(v: &Vec3d) -> Vec3d {
+        Vec3d::mul(v, 1.0 / v.length())
+    }
+
     pub fn add(v1: &Vec3d, v2: &Vec3d) -> Vec3d {
         Vec3d { x: v1.x + v2.x, y: v1.y + v2.y, z: v1.z + v2.z }
+    }
+    
+    pub fn sub(v1: &Vec3d, v2: &Vec3d) -> Vec3d {
+        Vec3d { x: v1.x - v2.x, y: v1.y - v2.y, z: v1.z - v2.z }
     }
 
     pub fn mul(v: &Vec3d, t: f32) -> Vec3d {
         Vec3d{x: v.x *t, y: v.y * t, z: v.z * t}
     }
-
 }
 
 #[cfg(test)]
