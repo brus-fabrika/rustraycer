@@ -37,6 +37,10 @@ impl Vec3d {
     pub fn mul(v: &Vec3d, t: f32) -> Vec3d {
         Vec3d{x: v.x *t, y: v.y * t, z: v.z * t}
     }
+
+    pub fn dot(v: &Vec3d, u: &Vec3d) -> f32 {
+        v.x * u.x + v.y * u.y + v.z * u.z
+    }
 }
 
 #[cfg(test)]

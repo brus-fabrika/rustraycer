@@ -56,7 +56,19 @@ fn write_color(f: &mut fs::File, c: &Color) {
     write!(f, "{} {} {}\n", ir, ig, ib).expect("Cannot write to file");
 }
 
+fn hit_sphere(center: &Point3d, radius: f32, r: &Ray) -> bool {
+    let oc = Vec3d::sub(&Point3d::as_vec3d(center), &Point3d::as_vec3d(&r.origin));
+    let a = Vec3d::dot(&r.direction, &r.direction);
+    let b = -2.0 * Vec3d::dot(&r.direction, &oc);
+    let c = Vec3d::dot(&oc, &oc) - radius*radius;
+    let discriminant = b * b - 4.0 * a * c;
+    return discriminant >= 0.0;
+}
+
 fn ray_color(r: &Ray) -> Color {
+    if hit_sphere(&Point3d(Vec3d { x: 0.0, y: 0.0, z: -1.0 }), 0.5, r) {
+        return Color{r: 1.0, g: 0.0, b: 0.0};
+    }
     let unit_direction = Vec3d::unit(&r.direction);
     let a = 0.5 * (unit_direction.y + 1.0);
 
