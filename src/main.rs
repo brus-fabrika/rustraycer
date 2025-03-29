@@ -1,24 +1,38 @@
 use std::fs;
 use std::io::Write;
 
+use hit_record::{Hit, HittableList, Sphere};
+
 use crate::vec3d::Vec3d;
 
 pub mod vec3d;
+pub mod hit_record;
 
 const IMAGE_WIDTH: u16 = 800;
-//const IMAGE_HEIGHT: u16 = 256;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Point3d(Vec3d);
 
 impl Point3d {
+    fn new(x: f32, y: f32, z: f32) -> Point3d {
+        Point3d(Vec3d{x, y, z})
+    }
+
+    fn origin() -> Point3d {
+        Point3d::new(0.0, 0.0, 0.0)
+    }
+
     fn clone(&self) -> Point3d {
         Point3d(Vec3d{x: self.0.x, y: self.0.y, z: self.0.z})
     }
 
-    fn as_vec3d(p: &Point3d) -> Vec3d {
-        Vec3d{x: p.0.x, y: p.0.y, z: p.0.z}
+    fn as_vec3d(&self) -> Vec3d {
+        Vec3d::new(self.0.x, self.0.y, self.0.z)
     }
+
+    //fn as_vec3d(p: &Point3d) -> Vec3d {
+    //    Vec3d{x: p.0.x, y: p.0.y, z: p.0.z}
+    //}
 }
 
 #[derive(Debug)]
@@ -53,33 +67,22 @@ fn write_color(f: &mut fs::File, c: &Color) {
     let ig = (255.999 * c.g) as i32;
     let ib = (255.999 * c.b) as i32;
 
-    write!(f, "{} {} {}\n", ir, ig, ib).expect("Cannot write to file");
+    write!(f, "{ir} {ig} {ib}\n").expect("Cannot write to file");
 }
 
-fn hit_sphere(center: &Point3d, radius: f32, r: &Ray) -> f32 {
-    let oc = Vec3d::sub(&Point3d::as_vec3d(center), &Point3d::as_vec3d(&r.origin));
-    let a = Vec3d::length_squared(&r.direction);
-    let h = Vec3d::dot(&r.direction, &oc);
-    let c = Vec3d::length_squared(&oc) - radius*radius;
-    let discriminant = h*h - a*c;
-    if discriminant < 0.0 {
-        return -1.0;
-    } else {
-        return (h - discriminant.sqrt()) / a;   
+fn ray_color(r: &Ray, world: &HittableList) -> Color {
+    match world.hit(r, 0.0, f32::INFINITY) {
+        Some(hr) => {
+            let cv = Vec3d::mul(&Vec3d::add(&hr.normal, &Vec3d::new(1.0, 1.0, 1.0)), 0.5);
+            return Color{r: cv.x, g: cv.y, b: cv.z};
+        },
+        None => ()
     }
-}
 
-fn ray_color(r: &Ray) -> Color {
-    let t = hit_sphere(&Point3d(Vec3d { x: 0.0, y: 0.0, z: -1.0 }), 0.5, r);
-    if t > 0.0 {
-        let n = Vec3d::unit(&Vec3d::sub(&Point3d::as_vec3d(&r.at(t)), &Vec3d{x: 0.0, y: 0.0, z: -1.0}));
-        let cv = Vec3d::mul(&Vec3d::add(&n, &Vec3d{x: 1.0, y: 1.0, z: 1.0}), 0.5);
-        return Color{r: cv.x, g: cv.y, b: cv.z};
-    }
     let unit_direction = Vec3d::unit(&r.direction);
     let a = 0.5 * (unit_direction.y + 1.0);
 
-    let cv = Vec3d::add(&Vec3d::mul(&Vec3d{x: 1.0, y: 1.0, z: 1.0}, 1.0 - a), &Vec3d::mul(&Vec3d{x: 0.5, y: 0.7, z: 1.0}, a));
+    let cv = Vec3d::add(&Vec3d::mul(&Vec3d::new(1.0, 1.0, 1.0), 1.0 - a), &Vec3d::mul(&Vec3d::new(0.5, 0.7, 1.0), a));
 
     Color{r: cv.x, g: cv.y, b: cv.z}
 }
@@ -96,50 +99,73 @@ fn main() {
 
     // Calculate the image height and ensure it is at least 1
     let image_height = get_image_height(image_width, aspect_ratio);
-   
+  
+    // World
+    let mut world = HittableList::default();
+    world.add(Box::new(Sphere::new(Point3d::new(0.0, 0.0, -1.0), 0.5)));
+
+    world.add(Box::new(Sphere::new(Point3d::new(-1.0, 0.6, -2.0), 0.5)));
+    world.add(Box::new(Sphere::new(Point3d::new(5.0, 0.6, -5.0), 1.0)));
+    
+    world.add(Box::new(Sphere::new(Point3d::new(0.0, -100.5, -1.0), 100.0)));
+
     // Camera
     let focal_length: f32 = 1.0;
     let viewport_height: f32 = 2.0;
     let viewport_width = viewport_height * f32::from(image_width) / f32::from(image_height);
-    let camera_center = Point3d(Vec3d{x:0.0, y: 0.0, z: 0.0});
+    //let camera_center = Point3d::origin();
+    let camera_center = Point3d::new(0.0, 0.0, 0.0);
 
     // viewport vectors
-    let viewport_u = Vec3d{x: viewport_width, y: 0.0, z: 0.0};
-    let viewport_v = Vec3d{x: 0.0, y: -viewport_height, z: 0.0};
+    let viewport_u = &Vec3d::new(viewport_width, 0.0, 0.0);
+    let viewport_v = &Vec3d::new(0.0, -viewport_height, 0.0);
 
     // pixel delta vectors
-    let pixel_delta_u = Vec3d::mul(&viewport_u, 1.0 / f32::from(image_width));
-    let pixel_delta_v = Vec3d::mul(&viewport_v, 1.0 / f32::from(image_height));
+    let pixel_delta_u = &Vec3d::mul(viewport_u, 1.0 / f32::from(image_width));
+    let pixel_delta_v = &Vec3d::mul(viewport_v, 1.0 / f32::from(image_height));
 
     // Calculate the location of the upper left pixel
-    let viewport_center_camera = Vec3d::sub(&Point3d::as_vec3d(&camera_center), &Vec3d{x: 0.0, y: 0.0, z: focal_length});
-    let viewport_center_viewport = Vec3d::add(&Vec3d::mul(&viewport_u, 0.5), &Vec3d::mul(&viewport_v, 0.5));
-    let viewport_upper_left = Vec3d::sub(&viewport_center_camera, &viewport_center_viewport);
+    let viewport_center_camera = &Vec3d::sub(&camera_center.as_vec3d(), &Vec3d::new(0.0, 0.0, focal_length));
+    let viewport_center_viewport = &Vec3d::add(&Vec3d::mul(viewport_u, 0.5), &Vec3d::mul(viewport_v, 0.5));
+    let viewport_upper_left = &Vec3d::sub(viewport_center_camera, viewport_center_viewport);
 
-    let pixel00_loc = Vec3d::add(&viewport_upper_left, &Vec3d::mul(&Vec3d::add(&pixel_delta_u, &pixel_delta_v), 0.5));
+    let pixel00_loc = &Vec3d::add(viewport_upper_left, &Vec3d::mul(&Vec3d::add(pixel_delta_u, pixel_delta_v), 0.5));
 
     // Render
+    use std::time::Instant;
+    let now = Instant::now();
 
-    let mut f = fs::File::create("rendered.ppm").expect("Cannot create rendered image file");
+    let mut log_threshold = 0;
 
-    write!(f, "P3\n{} {}\n255\n", image_width, image_height).expect("Cannot write to file");
-    
+    let mut color_vec: Vec<Color> = vec![];
+
     for j in 0 .. image_height {
-        let processed = (100.0 * f32::from(j) / f32::from(image_height)) as i32;
-        if processed % 10 == 0 {
+        let processed = (100.0 * f32::from(j+1) / f32::from(image_height)) as i32;
+        if processed >= log_threshold {
             println!("Scanlines Processed {} ({}%)...", j, processed);
+            log_threshold += 10;
         }
         
         for i in 0 .. image_width {
-            let pixel_shift = Vec3d::add(&Vec3d::mul(&pixel_delta_u, f32::from(i)), &Vec3d::mul(&pixel_delta_v, f32::from(j)));
-            let ray_direction = Vec3d::add(&pixel00_loc, &pixel_shift);
+            let pixel_shift = &Vec3d::add(&Vec3d::mul(pixel_delta_u, f32::from(i)), &Vec3d::mul(pixel_delta_v, f32::from(j)));
+            let ray_direction = Vec3d::add(pixel00_loc, pixel_shift);
 
             let r = Ray::new(camera_center.clone(), ray_direction);
 
-            let c = ray_color(&r);           
-            write_color(&mut f, &c);
+            color_vec.push(ray_color(&r, &world));
         }
     }
+
+    let mut elapsed = now.elapsed();
+    println!("Calculated in: {:.2?}", elapsed);
+    println!("Saving image to file...");
+
+    let mut f = fs::File::create("rendered.ppm").expect("Cannot create rendered image file");
+    write!(f, "P3\n{} {}\n255\n", image_width, image_height).expect("Cannot write to file");
+    color_vec.iter().for_each(|c| write_color(&mut f, c));
+
+    elapsed = now.elapsed();
+    println!("Total elapsed: {:.2?}", elapsed);
 }
 
 

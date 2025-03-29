@@ -1,10 +1,13 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct Vec3d{pub x: f32, pub y: f32, pub z: f32}
 
 impl Vec3d {
+    pub fn new(x: f32, y: f32, z: f32) -> Vec3d {
+        Vec3d{x, y, z}
+    }
+    
     pub fn clone(&self) -> Vec3d {
-
-        Vec3d{x: self.x, y: self.y, z: self.z}
+        Vec3d::new(self.x, self.y, self.z)
     }
     
     pub fn length_squared(&self) -> f32 {
