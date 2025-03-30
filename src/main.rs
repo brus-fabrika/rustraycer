@@ -2,11 +2,13 @@ use std::fs;
 use std::io::Write;
 
 use hit_record::{Hit, HittableList, Sphere};
+use interval::Interval;
 
 use crate::vec3d::Vec3d;
 
 pub mod vec3d;
 pub mod hit_record;
+pub mod interval;
 
 const IMAGE_WIDTH: u16 = 800;
 
@@ -71,7 +73,7 @@ fn write_color(f: &mut fs::File, c: &Color) {
 }
 
 fn ray_color(r: &Ray, world: &HittableList) -> Color {
-    match world.hit(r, 0.0, f32::INFINITY) {
+    match world.hit(r, &Interval::new(0.0, f32::INFINITY)) {
         Some(hr) => {
             let cv = Vec3d::mul(&Vec3d::add(&hr.normal, &Vec3d::new(1.0, 1.0, 1.0)), 0.5);
             return Color{r: cv.x, g: cv.y, b: cv.z};
