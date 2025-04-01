@@ -1,9 +1,10 @@
-use crate::{vec3d::Vec3d, Point3d, Ray};
+use crate::{vec3d::Vec3d, Point3d};
+use crate::camera::Ray;
 use crate::interval::Interval;
 
 #[derive(Default)]
 pub struct HitRecord {
-    point: Point3d,
+    //point: Point3d,
     pub normal: Vec3d,
     t: f32,
     front_face: bool

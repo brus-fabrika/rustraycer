@@ -1,5 +1,9 @@
 #[derive(Debug, PartialEq, Default)]
-pub struct Vec3d{pub x: f32, pub y: f32, pub z: f32}
+pub struct  Vec3d {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32
+}
 
 impl Vec3d {
     pub fn new(x: f32, y: f32, z: f32) -> Vec3d {
