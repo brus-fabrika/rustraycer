@@ -1,4 +1,6 @@
 use crate::{hit_record::{Hit, HittableList}, interval::Interval, vec3d::Vec3d, Color, Point3d};
+use rand::Rng;
+
 
 #[derive(Debug)]
 pub struct Ray {
@@ -22,6 +24,7 @@ pub struct Camera {
     aspect_ratio: f32,
     pub(super) image_width: u16,
     pub(super) image_height: u16,
+    samples_per_pixel: u8,
     center: Point3d,
     pixel00_loc: Point3d,
     pixel_delta_u: Vec3d,
@@ -30,7 +33,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn initialize(aspect_ratio: f32, image_width: u16) -> Camera {
+    pub fn initialize(aspect_ratio: f32, image_width: u16, spp: u8) -> Camera {
 
          // Calculate the image height and ensure it is at least 1
         let image_height = get_image_height(image_width, aspect_ratio);
@@ -62,12 +65,33 @@ impl Camera {
             aspect_ratio,
             image_width,
             image_height,
+            samples_per_pixel: spp,
             center,
             pixel00_loc,
             pixel_delta_u,
             pixel_delta_v,
             pixels: vec![],
         }
+    }
+
+    fn sample_square(&self) -> Vec3d {
+        let rnd_x = rand::rng().random_range(0.0..1.0);
+        let rnd_y = rand::rng().random_range(0.0..1.0);
+        Vec3d::new(rnd_x - 0.5, rnd_y - 0.5, 0.0)
+    }
+
+    fn get_ray(&self, i: u16, j: u16) -> Ray {
+        // construct a camera ray originating from the origin and directed at randomly
+        // sampled point around the pixel location i, j
+        let offset = self.sample_square();
+        
+        let pixel_shift = &Vec3d::add(&Vec3d::mul(&self.pixel_delta_u, f32::from(i) + offset.x), &Vec3d::mul(&self.pixel_delta_v, f32::from(j) + offset.y));
+        let pixel_sample = Vec3d::add(&self.pixel00_loc.as_vec3d(), pixel_shift);
+
+        let ray_origin = self.center.clone();
+        let ray_direction = Vec3d::sub(&pixel_sample, &ray_origin.as_vec3d());
+
+        Ray::new(ray_origin, ray_direction)
     }
 
     pub fn render(&mut self, world: &HittableList) {
@@ -81,12 +105,18 @@ impl Camera {
             }
             
             for i in 0 .. self.image_width {
-                let pixel_shift = &Vec3d::add(&Vec3d::mul(&self.pixel_delta_u, f32::from(i)), &Vec3d::mul(&self.pixel_delta_v, f32::from(j)));
-                let ray_direction = Vec3d::add(&self.pixel00_loc.as_vec3d(), pixel_shift);
 
-                let r = Ray::new(self.center.clone(), ray_direction);
+                let mut pixel_color = Vec3d::new(0.0, 0.0, 0.0);
 
-                self.pixels.push(self.ray_color(&r, &world));
+                for sample in 0 .. self.samples_per_pixel {
+                    let r = self.get_ray(i, j);
+                    let pc = self.ray_color(&r, &world);
+                    pixel_color = Vec3d::add(&pixel_color, &Vec3d::new(pc.r, pc.g, pc.b));
+                }
+                
+                pixel_color = Vec3d::mul(&pixel_color, 1.0 / f32::from(self.samples_per_pixel));
+
+                self.pixels.push(Color { r: pixel_color.x, g: pixel_color.y, b: pixel_color.z });
             }
         }
     }

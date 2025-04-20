@@ -9,6 +9,7 @@ use std::io::Write;
 use camera::Camera;
 
 use hit_record::{HittableList, Sphere};
+use interval::Interval;
 
 use crate::vec3d::Vec3d;
 
@@ -52,11 +53,16 @@ struct Color{r: f32, g: f32, b: f32}
     }
 }*/
 
+const INTENSITY: Interval = Interval {
+    min: 0.0,
+    max: 0.999,
+};
+
 fn write_color(f: &mut fs::File, c: &Color) {
 
-    let ir = (255.999 * c.r) as i32;
-    let ig = (255.999 * c.g) as i32;
-    let ib = (255.999 * c.b) as i32;
+    let ir = (256.0 * INTENSITY.clamp(c.r)) as i32;
+    let ig = (256.0 * INTENSITY.clamp(c.g)) as i32;
+    let ib = (256.0 * INTENSITY.clamp(c.b)) as i32;
 
     write!(f, "{ir} {ig} {ib}\n").expect("Cannot write to file");
 }
@@ -73,7 +79,7 @@ fn main() {
     world.add(Box::new(Sphere::new(Point3d::new(0.0, -100.5, -1.0), 100.0)));
 
     // Camera
-    let mut camera = Camera::initialize(16.0 / 9.0, IMAGE_WIDTH);
+    let mut camera = Camera::initialize(16.0 / 9.0, IMAGE_WIDTH, 10);
 
     // Render
     use std::time::Instant;

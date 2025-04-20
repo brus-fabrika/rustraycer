@@ -60,7 +60,7 @@ impl Hit for Sphere {
 
         let mut hr = HitRecord {
             t: root,
-            point: p,
+            //point: p,
             normal: Vec3d::new(0.0, 0.0, 0.0),
             front_face: false,
         };
