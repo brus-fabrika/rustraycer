@@ -54,15 +54,29 @@ struct Color{r: f32, g: f32, b: f32}
 }*/
 
 const INTENSITY: Interval = Interval {
-    min: 0.0,
+    min: 0.000,
     max: 0.999,
 };
 
+fn linear_to_gamma(l: f32) -> f32 {
+    if l < 0.0 {
+        0.0
+    } else {
+        f32::sqrt(l)
+    }
+}
+
 fn write_color(f: &mut fs::File, c: &Color) {
 
-    let ir = (256.0 * INTENSITY.clamp(c.r)) as i32;
-    let ig = (256.0 * INTENSITY.clamp(c.g)) as i32;
-    let ib = (256.0 * INTENSITY.clamp(c.b)) as i32;
+    // apply a linear to gamma transform for gamma 2
+    let r = linear_to_gamma(c.r);
+    let g = linear_to_gamma(c.g);
+    let b = linear_to_gamma(c.b);
+
+    // translate the [0, 1] component values to the byte (color) range [0, 255]
+    let ir = (256.0 * INTENSITY.clamp(r)) as u8;
+    let ig = (256.0 * INTENSITY.clamp(g)) as u8;
+    let ib = (256.0 * INTENSITY.clamp(b)) as u8;
 
     write!(f, "{ir} {ig} {ib}\n").expect("Cannot write to file");
 }

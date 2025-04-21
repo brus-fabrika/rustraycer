@@ -1,3 +1,6 @@
+use std::ops::Add;
+use rand::Rng;
+
 #[derive(Debug, PartialEq, Default)]
 pub struct  Vec3d {
     pub x: f32,
@@ -5,11 +8,40 @@ pub struct  Vec3d {
     pub z: f32
 }
 
+impl Add for Vec3d {
+    type Output = Vec3d;
+
+    fn add(self, other: Vec3d) -> Vec3d {
+        Vec3d {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z
+        }
+    }
+
+}
+
 impl Vec3d {
     pub fn new(x: f32, y: f32, z: f32) -> Vec3d {
         Vec3d{x, y, z}
     }
-    
+
+    pub fn random() -> Vec3d {
+        Vec3d::new(
+            rand::rng().random_range(0.0..1.0),
+            rand::rng().random_range(0.0..1.0),
+            rand::rng().random_range(0.0..1.0)
+        )
+    }
+
+    pub fn random_range(i: f32, j: f32) -> Vec3d {
+        Vec3d::new(
+            rand::rng().random_range(i .. j),
+            rand::rng().random_range(i .. j),
+            rand::rng().random_range(i .. j),
+        )
+    }
+
     pub fn clone(&self) -> Vec3d {
         Vec3d::new(self.x, self.y, self.z)
     }
@@ -31,6 +63,25 @@ impl Vec3d {
 
     pub fn unit(v: &Vec3d) -> Vec3d {
         Vec3d::mul(v, 1.0 / v.length())
+    }
+
+    pub fn random_unit() -> Vec3d {
+        loop {
+            let p = &Self::random_range(-1.0, 1.0);
+            let lensq = p.length_squared();
+            if 1e-10 < lensq && lensq <= 1.0 {
+                return Vec3d::unit(p);
+            }
+        }
+    }
+
+    pub fn random_on_hemisphere(normal: &Vec3d) -> Vec3d {
+        let p = &Vec3d::random_unit();
+        if Self::dot(p, normal) > 0.0 {
+            p.clone()
+        } else {
+            Vec3d::mul(p, -1.0)
+        }
     }
 
     pub fn add(v1: &Vec3d, v2: &Vec3d) -> Vec3d {
@@ -66,7 +117,16 @@ mod tests {
         let r = Vec3d::add(&v1, &Vec3d{x: 2.0, y: 3.0, z: 4.0});
         assert_eq!(r, Vec3d{x: 3.0, y: 5.0, z: 7.0});
     }
-    /*#[test]
+    
+    #[test]
+    fn vec_plus_vec() {
+        let v1 = Vec3d{x: 1.0, y: 2.0, z: 3.0};
+        let r = v1.clone() + Vec3d{x: 2.0, y: 3.0, z: 4.0};
+        assert_eq!(r, Vec3d{x: 3.0, y: 5.0, z: 7.0});
+        assert_eq!(v1, Vec3d{x: 1.0, y: 2.0, z: 3.0});
+    }
+
+   /*#[test]
     fn vec_add_vec_chained() {
         let mut v1 = Vec3d{x: 1.0, y: 2.0, z: 3.0};
         

@@ -24,7 +24,8 @@ pub struct Camera {
     aspect_ratio: f32,
     pub(super) image_width: u16,
     pub(super) image_height: u16,
-    samples_per_pixel: u8,
+    samples_per_pixel: u8,          // count of random samples per pixel (antialiasing)
+    max_depth: u8,                  // max number of ray bounces into scene (reflaction)
     center: Point3d,
     pixel00_loc: Point3d,
     pixel_delta_u: Vec3d,
@@ -66,6 +67,7 @@ impl Camera {
             image_width,
             image_height,
             samples_per_pixel: spp,
+            max_depth: 10,
             center,
             pixel00_loc,
             pixel_delta_u,
@@ -108,9 +110,9 @@ impl Camera {
 
                 let mut pixel_color = Vec3d::new(0.0, 0.0, 0.0);
 
-                for sample in 0 .. self.samples_per_pixel {
+                for _ in 0 .. self.samples_per_pixel {
                     let r = self.get_ray(i, j);
-                    let pc = self.ray_color(&r, &world);
+                    let pc = self.ray_color(&r, self.max_depth, &world);
                     pixel_color = Vec3d::add(&pixel_color, &Vec3d::new(pc.r, pc.g, pc.b));
                 }
                 
@@ -121,10 +123,19 @@ impl Camera {
         }
     }
 
-    fn ray_color(&self, r: &Ray, world: &HittableList) -> Color {
-        if let Some(hr) = world.hit(r, &Interval::new(0.0, f32::INFINITY)) {
-            let cv = Vec3d::mul(&Vec3d::add(&hr.normal, &Vec3d::new(1.0, 1.0, 1.0)), 0.5);
-            return Color{r: cv.x, g: cv.y, b: cv.z};
+    fn ray_color(&self, r: &Ray, depth: u8, world: &HittableList) -> Color {
+        if depth == 0 {
+            return Color {r: 0.0, g: 0.0, b: 0.0};
+        }
+
+        if let Some(hr) = world.hit(r, &Interval::new(0.001, f32::INFINITY)) {
+            //let direction = Vec3d::random_on_hemisphere(&hr.normal);
+            let direction = hr.normal + Vec3d::random_unit();
+            let rc = self.ray_color(&Ray{origin: hr.point, direction}, depth - 1, world);
+            return Color{r: rc.r * 0.5, g: rc.g * 0.5, b: rc.b * 0.5};
+
+            //let cv = Vec3d::mul(&Vec3d::add(&hr.normal, &Vec3d::new(1.0, 1.0, 1.0)), 0.5);
+            //return Color{r: cv.x, g: cv.y, b: cv.z};
         }
 
         let unit_direction = Vec3d::unit(&r.direction);
