@@ -1,3 +1,6 @@
+use std::rc::Rc;
+
+use crate::material::Material;
 use crate::{vec3d::Vec3d, Point3d};
 use crate::camera::Ray;
 use crate::interval::Interval;
@@ -6,6 +9,7 @@ use crate::interval::Interval;
 pub struct HitRecord {
     pub point: Point3d,
     pub normal: Vec3d,
+    pub mat: Option<Rc<dyn Material>>,
     t: f32,
     front_face: bool
 }
@@ -25,12 +29,13 @@ pub trait Hit {
 
 pub struct Sphere {
     center: Point3d,
-    radius: f32
+    radius: f32,
+    material: Rc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3d, radius: f32) -> Sphere {
-        Sphere{center, radius}
+    pub fn new(center: Point3d, radius: f32, material: Rc<dyn Material>) -> Sphere {
+        Sphere{center, radius, material}
     }
 }
 
@@ -63,6 +68,7 @@ impl Hit for Sphere {
             point: p,
             normal: Vec3d::new(0.0, 0.0, 0.0),
             front_face: false,
+            mat: Option::Some(self.material.clone()),
         };
         
         hr.set_face_normal(r, outward_normal);

@@ -9,7 +9,7 @@ pub struct Ray {
 }
 
 impl Ray {
-    fn new(origin: Point3d, direction: Vec3d) -> Ray {
+    pub fn new(origin: Point3d, direction: Vec3d) -> Ray {
         return Ray{origin, direction} 
     }
     
@@ -129,13 +129,16 @@ impl Camera {
         }
 
         if let Some(hr) = world.hit(r, &Interval::new(0.001, f32::INFINITY)) {
-            //let direction = Vec3d::random_on_hemisphere(&hr.normal);
-            let direction = hr.normal + Vec3d::random_unit();
-            let rc = self.ray_color(&Ray{origin: hr.point, direction}, depth - 1, world);
-            return Color{r: rc.r * 0.5, g: rc.g * 0.5, b: rc.b * 0.5};
-
-            //let cv = Vec3d::mul(&Vec3d::add(&hr.normal, &Vec3d::new(1.0, 1.0, 1.0)), 0.5);
-            //return Color{r: cv.x, g: cv.y, b: cv.z};
+            // hr.mat - material of the object
+            // TODO: refactor this!!!
+            let m = hr.mat.clone();
+            let (scat_ray, scat_color, scattered) = m.unwrap().scatter(r, &hr);
+            return if scattered {
+                let rc = self.ray_color(&scat_ray, depth - 1, world);
+                Color{r: rc.r * scat_color.r, g: rc.g * scat_color.g, b: rc.b * scat_color.b}
+            } else {
+                Color{r: 0.0, g: 0.0, b: 0.0}
+            }; 
         }
 
         let unit_direction = Vec3d::unit(&r.direction);

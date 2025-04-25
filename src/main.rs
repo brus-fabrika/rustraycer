@@ -1,15 +1,17 @@
 mod camera;
 mod vec3d;
 mod hit_record;
+mod material;
 mod interval;
 
-use std::fs;
+use std::{fs, rc::Rc};
 use std::io::Write;
 
 use camera::Camera;
 
 use hit_record::{HittableList, Sphere};
 use interval::Interval;
+use material::{Lambertian, Metal};
 
 use crate::vec3d::Vec3d;
 
@@ -85,12 +87,21 @@ fn main() {
 
     // World
     let mut world = HittableList::default();
-    world.add(Box::new(Sphere::new(Point3d::new(0.0, 0.0, -1.0), 0.5)));
 
-    world.add(Box::new(Sphere::new(Point3d::new(-1.0, 0.6, -2.0), 0.5)));
-    world.add(Box::new(Sphere::new(Point3d::new(5.0, 0.6, -5.0), 1.0)));
+    let material_ground = Rc::new(Lambertian{albedo: Color{r: 0.8, g: 0.8, b: 0.0,}});
+    let material_center = Rc::new(Lambertian{albedo: Color{r: 0.1, g: 0.2, b: 0.5,}});
+    let material_left = Rc::new(Metal{albedo: Color{r: 0.8, g: 0.8, b: 0.8,}, fuzz: 0.3});
+    let material_right = Rc::new(Metal{albedo: Color{r: 0.8, g: 0.6, b: 0.2,}, fuzz: 1.0});
+
+    world.add(Box::new(Sphere::new(Point3d::new(0.0, 0.0, -1.2), 0.5, material_center.clone())));
+
+    world.add(Box::new(Sphere::new(Point3d::new(-1.0, 0.6, -2.0), 0.5, material_center.clone())));
+    world.add(Box::new(Sphere::new(Point3d::new(5.0, 0.6, -5.0), 1.0, material_center.clone())));
     
-    world.add(Box::new(Sphere::new(Point3d::new(0.0, -100.5, -1.0), 100.0)));
+    world.add(Box::new(Sphere::new(Point3d::new(-1.0, 0.0, -1.0), 0.5, material_left.clone())));
+    world.add(Box::new(Sphere::new(Point3d::new(1.0, 0.0, -1.0), 0.5, material_right.clone())));
+    
+    world.add(Box::new(Sphere::new(Point3d::new(0.0, -100.5, -1.0), 100.0, material_ground.clone())));
 
     // Camera
     let mut camera = Camera::initialize(16.0 / 9.0, IMAGE_WIDTH, 10);

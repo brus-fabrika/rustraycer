@@ -54,6 +54,10 @@ impl Vec3d {
         self.length_squared().sqrt()
     }
 
+    pub fn near_zero(&self) -> bool {
+        let eps = 1e-8f32;
+        (self.x.abs() < eps) && (self.y.abs() < eps) && (self.z.abs() < eps)
+    }
     /*pub fn add(&mut self, v: &Vec3d) -> &Self {
         self.x += v.x;
         self.y += v.y;
@@ -98,6 +102,11 @@ impl Vec3d {
 
     pub fn dot(v: &Vec3d, u: &Vec3d) -> f32 {
         v.x * u.x + v.y * u.y + v.z * u.z
+    }
+
+    pub fn reflect(v: &Vec3d, n: &Vec3d) -> Vec3d {
+        let d2 = 2.0 * Self::dot(v, n);
+        Self::sub(v, &Self::mul(n, d2))
     }
 }
 
