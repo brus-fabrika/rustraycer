@@ -11,7 +11,7 @@ pub struct HitRecord {
     pub normal: Vec3d,
     pub mat: Option<Rc<dyn Material>>,
     t: f32,
-    front_face: bool
+    pub front_face: bool
 }
 
 impl HitRecord {
