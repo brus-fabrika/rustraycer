@@ -20,15 +20,17 @@ impl Ray {
 }
 
 pub struct CameraView {
-    pub vfov: f32, // vertical view angle (field of view)
-    pub lookfrom: Point3d, // point camera is looking from
-    pub lookat: Point3d, // point camera is looking at
-    pub vup: Vec3d, // camera-relative up direction
+    pub vfov: f32,              // vertical view angle (field of view)
+    pub lookfrom: Point3d,      // point camera is looking from
+    pub lookat: Point3d,        // point camera is looking at
+    pub vup: Vec3d,             // camera-relative up direction
+    pub defocus_angle: f32,     // variation angle of rays through each pixel
+    pub focus_dist: f32,        // distance from camera lookfrom point to plane of perfect focus
 }
 
 #[derive(Default)]
 pub struct Camera {
-    aspect_ratio: f32,
+    //aspect_ratio: f32,
     pub(super) image_width: u16,
     pub(super) image_height: u16,
     samples_per_pixel: u8,          // count of random samples per pixel (antialiasing)
@@ -39,14 +41,19 @@ pub struct Camera {
     pixel_delta_v: Vec3d,
     pub(super) pixels: Vec<Color>,
 
-    pub(super) vfov: f32, // vertical view angle (field of view)
-    pub(super) lookfrom: Point3d, // point camera is looking from
-    pub(super) lookat: Point3d, // point camera is looking at
-    pub(super) vup: Vec3d, // camera-relative up direction
+    defocus_angle: f32,
 
-    u: Vec3d, // camera frame basis vectors
-    v: Vec3d,
-    w: Vec3d,
+    defocus_disk_u: Vec3d,
+    defocus_disk_v: Vec3d,
+
+    //pub(super) vfov: f32, // vertical view angle (field of view)
+    //pub(super) lookfrom: Point3d, // point camera is looking from
+    //pub(super) lookat: Point3d, // point camera is looking at
+    //pub(super) vup: Vec3d, // camera-relative up direction
+
+    //u: Vec3d, // camera frame basis vectors
+    //v: Vec3d,
+    //w: Vec3d,
 }
 
 impl Camera {
@@ -62,12 +69,12 @@ impl Camera {
 
         // Camera
         // Determine viewport dimensions
-        let focal_length: f32 = Vec3d::sub(&cv.lookfrom.as_vec3d(), &cv.lookat.as_vec3d()).length();
+        //let focal_length: f32 = Vec3d::sub(&cv.lookfrom.as_vec3d(), &cv.lookat.as_vec3d()).length();
 
         let theta = cv.vfov * 2.0 * 3.1415 / 360.0;
         let h = f32::tan(theta / 2.0);
 
-        let viewport_height: f32 = 2.0 * h * focal_length;
+        let viewport_height: f32 = 2.0 * h * cv.focus_dist;
         let viewport_width = viewport_height * f32::from(image_width) / f32::from(image_height);
 
         let center = cv.lookfrom.clone();
@@ -81,15 +88,19 @@ impl Camera {
         let pixel_delta_v = Vec3d::mul(viewport_v, 1.0 / f32::from(image_height));
 
         // Calculate the location of the upper left pixel
-        let viewport_center_camera = &Vec3d::sub(&center.as_vec3d(), &Vec3d::mul(&w, focal_length));
+        let viewport_center_camera = &Vec3d::sub(&center.as_vec3d(), &Vec3d::mul(&w, cv.focus_dist));
         let viewport_center_viewport = &Vec3d::add(&Vec3d::mul(viewport_u, 0.5), &Vec3d::mul(viewport_v, 0.5));
         let viewport_upper_left = &Vec3d::sub(viewport_center_camera, viewport_center_viewport);
 
         let pixel00_loc = Point3d::from_vec3d(Vec3d::add(viewport_upper_left, &Vec3d::mul(&Vec3d::add(&pixel_delta_u, &pixel_delta_v), 0.5)));
 
-   
+        // Calculate the camera defocus disk basis vectors
+        let defocus_radius = cv.focus_dist * f32::tan((cv.defocus_angle / 2.0) * 2.0 * 3.1415 / 360.0);
+        let defocus_disk_u = Vec3d::mul(&u, defocus_radius); 
+        let defocus_disk_v = Vec3d::mul(&v, defocus_radius); 
+
         Camera {
-            aspect_ratio,
+            //aspect_ratio,
             image_width,
             image_height,
             samples_per_pixel: spp,
@@ -99,13 +110,16 @@ impl Camera {
             pixel_delta_u,
             pixel_delta_v,
             pixels: vec![],
-            vfov: cv.vfov,
-            lookfrom: cv.lookfrom,
-            lookat: cv.lookat,
-            vup: cv.vup,
-            u,
-            v,
-            w,
+            defocus_angle: cv.defocus_angle,
+            defocus_disk_u,
+            defocus_disk_v,
+            //vfov: cv.vfov,
+            //lookfrom: cv.lookfrom,
+            //lookat: cv.lookat,
+            //vup: cv.vup,
+            //u,
+            //v,
+            //w,
         }
     }
 
@@ -123,10 +137,19 @@ impl Camera {
         let pixel_shift = &Vec3d::add(&Vec3d::mul(&self.pixel_delta_u, f32::from(i) + offset.x), &Vec3d::mul(&self.pixel_delta_v, f32::from(j) + offset.y));
         let pixel_sample = Vec3d::add(&self.pixel00_loc.as_vec3d(), pixel_shift);
 
-        let ray_origin = self.center.clone();
+        let ray_origin = if self.defocus_angle > 0.0 { self.defocus_disk_sample() } else { self.center.clone() };
         let ray_direction = Vec3d::sub(&pixel_sample, &ray_origin.as_vec3d());
 
         Ray::new(ray_origin, ray_direction)
+    }
+
+    fn defocus_disk_sample(&self) -> Point3d {
+        let p = Vec3d::random_in_unit_disk();
+        Point3d::new(
+            self.center.0.x + p.x * self.defocus_disk_u.x + p.y * self.defocus_disk_v.x,
+            self.center.0.y + p.x * self.defocus_disk_u.y + p.y * self.defocus_disk_v.y,
+            self.center.0.z + p.x * self.defocus_disk_u.z + p.y * self.defocus_disk_v.z
+        )
     }
 
     pub fn render(&mut self, world: &HittableList) {

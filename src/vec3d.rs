@@ -88,6 +88,19 @@ impl Vec3d {
         }
     }
 
+    pub fn random_in_unit_disk() -> Vec3d {
+        loop {
+            let p = Vec3d::new(
+                rand::rng().random_range(-1.0 .. 1.0),
+                rand::rng().random_range(-1.0 .. 1.0),
+                0.0
+            );
+            if p.length_squared() < 1.0 {
+                return p;
+            }
+        }
+    }
+
     pub fn add(v1: &Vec3d, v2: &Vec3d) -> Vec3d {
         Vec3d { x: v1.x + v2.x, y: v1.y + v2.y, z: v1.z + v2.z }
     }

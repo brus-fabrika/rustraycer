@@ -108,10 +108,12 @@ fn main() {
 
     // Camera
     let cv = CameraView {
-        vfov: 20.0,
+        vfov: 90.0,
         lookfrom: Point3d::new(-2.0, 2.0, 1.0),
         lookat: Point3d::new(0.0, 0.0, -1.0),
         vup: Vec3d::new(0.0, 1.0, 0.0),
+        defocus_angle: 0.6,
+        focus_dist: 3.4,
     };
     
     let mut camera = Camera::initialize(16.0 / 9.0, IMAGE_WIDTH, 10, cv);
