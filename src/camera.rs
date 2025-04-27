@@ -33,7 +33,7 @@ pub struct Camera {
     //aspect_ratio: f32,
     pub(super) image_width: u16,
     pub(super) image_height: u16,
-    samples_per_pixel: u8,          // count of random samples per pixel (antialiasing)
+    samples_per_pixel: u16,          // count of random samples per pixel (antialiasing)
     max_depth: u8,                  // max number of ray bounces into scene (reflaction)
     center: Point3d,
     pixel00_loc: Point3d,
@@ -57,7 +57,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn initialize(aspect_ratio: f32, image_width: u16, spp: u8, cv: CameraView) -> Camera {
+    pub fn initialize(aspect_ratio: f32, image_width: u16, max_depth: u8, spp: u16, cv: CameraView) -> Camera {
 
          // Calculate the image height and ensure it is at least 1
         let image_height = get_image_height(image_width, aspect_ratio);
@@ -104,7 +104,7 @@ impl Camera {
             image_width,
             image_height,
             samples_per_pixel: spp,
-            max_depth: 10,
+            max_depth,
             center,
             pixel00_loc,
             pixel_delta_u,
