@@ -7,7 +7,7 @@ mod interval;
 use std::{fs, rc::Rc};
 use std::io::Write;
 
-use camera::Camera;
+use camera::{Camera, CameraView};
 
 use hit_record::{HittableList, Sphere};
 use interval::Interval;
@@ -90,7 +90,6 @@ fn main() {
 
     let material_ground = Rc::new(Lambertian{albedo: Color{r: 0.8, g: 0.8, b: 0.0,}});
     let material_center = Rc::new(Lambertian{albedo: Color{r: 0.1, g: 0.2, b: 0.5,}});
-    //let material_left = Rc::new(Metal{albedo: Color{r: 0.8, g: 0.8, b: 0.8,}, fuzz: 0.3});
     let material_left = Rc::new(Dielectric{refraction_index: 1.5});
     let material_bubble = Rc::new(Dielectric{refraction_index: 1.0 / 1.5});
     let material_right = Rc::new(Metal{albedo: Color{r: 0.8, g: 0.6, b: 0.2,}, fuzz: 1.0});
@@ -108,7 +107,14 @@ fn main() {
     world.add(Box::new(Sphere::new(Point3d::new(0.0, -100.5, -1.0), 100.0, material_ground.clone())));
 
     // Camera
-    let mut camera = Camera::initialize(16.0 / 9.0, IMAGE_WIDTH, 10);
+    let cv = CameraView {
+        vfov: 20.0,
+        lookfrom: Point3d::new(-2.0, 2.0, 1.0),
+        lookat: Point3d::new(0.0, 0.0, -1.0),
+        vup: Vec3d::new(0.0, 1.0, 0.0),
+    };
+    
+    let mut camera = Camera::initialize(16.0 / 9.0, IMAGE_WIDTH, 10, cv);
 
     // Render
     use std::time::Instant;

@@ -104,6 +104,14 @@ impl Vec3d {
         v.x * u.x + v.y * u.y + v.z * u.z
     }
 
+    pub fn cross(u: &Vec3d, v: &Vec3d) -> Vec3d {
+        Vec3d::new(
+            u.y * v.z - u.z * v.y,
+            u.z * v.x - u.x * v.z,
+            u.x * v.y - u.y * v.x
+        )
+    }
+
     pub fn reflect(v: &Vec3d, n: &Vec3d) -> Vec3d {
         let d2 = 2.0 * Self::dot(v, n);
         Self::sub(v, &Self::mul(n, d2))

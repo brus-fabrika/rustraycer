@@ -19,6 +19,13 @@ impl Ray {
     }
 }
 
+pub struct CameraView {
+    pub vfov: f32, // vertical view angle (field of view)
+    pub lookfrom: Point3d, // point camera is looking from
+    pub lookat: Point3d, // point camera is looking at
+    pub vup: Vec3d, // camera-relative up direction
+}
+
 #[derive(Default)]
 pub struct Camera {
     aspect_ratio: f32,
@@ -30,32 +37,51 @@ pub struct Camera {
     pixel00_loc: Point3d,
     pixel_delta_u: Vec3d,
     pixel_delta_v: Vec3d,
-    pub(super) pixels: Vec<Color>
+    pub(super) pixels: Vec<Color>,
+
+    pub(super) vfov: f32, // vertical view angle (field of view)
+    pub(super) lookfrom: Point3d, // point camera is looking from
+    pub(super) lookat: Point3d, // point camera is looking at
+    pub(super) vup: Vec3d, // camera-relative up direction
+
+    u: Vec3d, // camera frame basis vectors
+    v: Vec3d,
+    w: Vec3d,
 }
 
 impl Camera {
-    pub fn initialize(aspect_ratio: f32, image_width: u16, spp: u8) -> Camera {
+    pub fn initialize(aspect_ratio: f32, image_width: u16, spp: u8, cv: CameraView) -> Camera {
 
          // Calculate the image height and ensure it is at least 1
         let image_height = get_image_height(image_width, aspect_ratio);
-      
+        
+        // Calculate the u,v,w unit basis vectors for the camera coordinate frame
+        let w = Vec3d::unit(&Vec3d::sub(&cv.lookfrom.as_vec3d(), &cv.lookat.as_vec3d()));
+        let u = Vec3d::unit(&Vec3d::cross(&cv.vup, &w));
+        let v = Vec3d::cross(&w, &u);
+
         // Camera
-        let focal_length: f32 = 1.0;
-        let viewport_height: f32 = 2.0;
+        // Determine viewport dimensions
+        let focal_length: f32 = Vec3d::sub(&cv.lookfrom.as_vec3d(), &cv.lookat.as_vec3d()).length();
+
+        let theta = cv.vfov * 2.0 * 3.1415 / 360.0;
+        let h = f32::tan(theta / 2.0);
+
+        let viewport_height: f32 = 2.0 * h * focal_length;
         let viewport_width = viewport_height * f32::from(image_width) / f32::from(image_height);
-        //let camera_center = Point3d::origin();
-        let center = Point3d::new(0.0, 0.0, 0.0);
+
+        let center = cv.lookfrom.clone();
 
         // viewport vectors
-        let viewport_u = &Vec3d::new(viewport_width, 0.0, 0.0);
-        let viewport_v = &Vec3d::new(0.0, -viewport_height, 0.0);
+        let viewport_u = &Vec3d::mul(&u, viewport_width);
+        let viewport_v = &Vec3d::mul(&v, -viewport_height);
 
         // pixel delta vectors
         let pixel_delta_u = Vec3d::mul(viewport_u, 1.0 / f32::from(image_width));
         let pixel_delta_v = Vec3d::mul(viewport_v, 1.0 / f32::from(image_height));
 
         // Calculate the location of the upper left pixel
-        let viewport_center_camera = &Vec3d::sub(&center.as_vec3d(), &Vec3d::new(0.0, 0.0, focal_length));
+        let viewport_center_camera = &Vec3d::sub(&center.as_vec3d(), &Vec3d::mul(&w, focal_length));
         let viewport_center_viewport = &Vec3d::add(&Vec3d::mul(viewport_u, 0.5), &Vec3d::mul(viewport_v, 0.5));
         let viewport_upper_left = &Vec3d::sub(viewport_center_camera, viewport_center_viewport);
 
@@ -73,6 +99,13 @@ impl Camera {
             pixel_delta_u,
             pixel_delta_v,
             pixels: vec![],
+            vfov: cv.vfov,
+            lookfrom: cv.lookfrom,
+            lookat: cv.lookat,
+            vup: cv.vup,
+            u,
+            v,
+            w,
         }
     }
 
