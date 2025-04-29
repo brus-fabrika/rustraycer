@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::ops::{Add, Sub, Mul, Div};
 use rand::Rng;
 
 #[derive(Debug, PartialEq, Default)]
@@ -16,6 +16,45 @@ impl Add for Vec3d {
             x: self.x + other.x,
             y: self.y + other.y,
             z: self.z + other.z
+        }
+    }
+
+}
+
+impl Sub for Vec3d {
+    type Output = Vec3d;
+
+    fn sub(self, other: Self) -> Self {
+        Vec3d {
+            x: self.x - other.x,
+            y: self.y - other.y,
+            z: self.z - other.z
+        }
+    }
+
+}
+
+impl Mul<f32> for Vec3d {
+    type Output = Vec3d;
+
+    fn mul(self, other: f32) -> Self {
+        Vec3d {
+            x: self.x * other,
+            y: self.y * other,
+            z: self.z * other
+        }
+    }
+
+}
+
+impl Div<f32> for Vec3d {
+    type Output = Vec3d;
+
+    fn div(self, other: f32) -> Self {
+        Vec3d {
+            x: self.x / other,
+            y: self.y / other,
+            z: self.z / other
         }
     }
 
@@ -66,7 +105,8 @@ impl Vec3d {
     }*/
 
     pub fn unit(v: &Vec3d) -> Vec3d {
-        Vec3d::mul(v, 1.0 / v.length())
+        let l = v.length();
+        Vec3d::new(v.x / l, v.y / l, v.z / l)
     }
 
     pub fn random_unit() -> Vec3d {

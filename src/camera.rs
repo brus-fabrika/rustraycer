@@ -63,7 +63,7 @@ impl Camera {
         let image_height = get_image_height(image_width, aspect_ratio);
         
         // Calculate the u,v,w unit basis vectors for the camera coordinate frame
-        let w = Vec3d::unit(&Vec3d::sub(&cv.lookfrom.as_vec3d(), &cv.lookat.as_vec3d()));
+        let w = Vec3d::unit(&(cv.lookfrom.as_vec3d() - cv.lookat.as_vec3d()));
         let u = Vec3d::unit(&Vec3d::cross(&cv.vup, &w));
         let v = Vec3d::cross(&w, &u);
 
@@ -168,7 +168,7 @@ impl Camera {
 
                 for _ in 0 .. self.samples_per_pixel {
                     let r = self.get_ray(i, j);
-                    let pc = self.ray_color(&r, self.max_depth, &world);
+                    let pc = self.ray_color(r, self.max_depth, world);
                     pixel_color = Vec3d::add(&pixel_color, &Vec3d::new(pc.r, pc.g, pc.b));
                 }
                 
@@ -179,18 +179,16 @@ impl Camera {
         }
     }
 
-    fn ray_color(&self, r: &Ray, depth: u8, world: &HittableList) -> Color {
+    fn ray_color(&self, r: Ray, depth: u8, world: &HittableList) -> Color {
         if depth == 0 {
             return Color {r: 0.0, g: 0.0, b: 0.0};
         }
 
-        if let Some(hr) = world.hit(r, &Interval::new(0.001, f32::INFINITY)) {
-            // hr.mat - material of the object
+        if let Some((hr, hit_mat)) = world.hit(&r, &Interval::new(0.001, f32::INFINITY)) {
             // TODO: refactor this!!!
-            let m = hr.mat.clone();
-            let (scat_ray, scat_color, scattered) = m.unwrap().scatter(r, &hr);
+            let (scat_ray, scat_color, scattered) = hit_mat.scatter(&r, &hr);
             return if scattered {
-                let rc = self.ray_color(&scat_ray, depth - 1, world);
+                let rc = self.ray_color(scat_ray, depth - 1, world);
                 Color{r: rc.r * scat_color.r, g: rc.g * scat_color.g, b: rc.b * scat_color.b}
             } else {
                 Color{r: 0.0, g: 0.0, b: 0.0}

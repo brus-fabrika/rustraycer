@@ -204,7 +204,7 @@ fn main() {
         focus_dist: 10.0,
     };
     
-    let mut camera = Camera::initialize(16.0 / 9.0, IMAGE_WIDTH, 50, 500, cv);
+    let mut camera = Camera::initialize(16.0 / 9.0, IMAGE_WIDTH, 50, 10, cv);
 
     // Render
     use std::time::Instant;

@@ -31,7 +31,7 @@ pub struct Metal {
 impl Material for Metal {
     fn scatter(&self, ray_in: &Ray, hr: &HitRecord) -> (Ray, Color, bool) {
         let scatter_direction = Vec3d::reflect(&ray_in.direction, &hr.normal);
-        let scatter_direction = Vec3d::unit(&scatter_direction) + Vec3d::mul(&Vec3d::random_unit(), self.fuzz);
+        let scatter_direction = Vec3d::unit(&scatter_direction) + Vec3d::random_unit() * self.fuzz;
         let scattered = Ray::new(hr.point.clone(), scatter_direction);
         let attenuation = Color{r: self.albedo.r, g: self.albedo.g, b: self.albedo.b};
         let is_scattered = Vec3d::dot(&scattered.direction, &hr.normal) > 0.0;
