@@ -102,10 +102,6 @@ impl Hit for HittableList {
             }
         }
 
-        if let Some(mat) = hit_mat {
-            Some((temp_rec, mat))
-        } else {
-            None
-        }
+        hit_mat.map(|mat| (temp_rec, mat))
     } 
 }

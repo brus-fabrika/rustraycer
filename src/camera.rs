@@ -172,7 +172,7 @@ impl Camera {
 
                 for _ in 0 .. self.samples_per_pixel {
                     let r = self.get_ray(i, j);
-                    let pc = self.ray_color(r, self.max_depth, world);
+                    let pc = Self::ray_color(r, self.max_depth, world);
                     pixel_color = pixel_color + Vec3d::new(pc.r, pc.g, pc.b);
                 }
                 
@@ -183,7 +183,7 @@ impl Camera {
         }
     }
 
-    fn ray_color(&self, r: Ray, depth: u8, world: &HittableList) -> Color {
+    fn ray_color(r: Ray, depth: u8, world: &HittableList) -> Color {
         if depth == 0 {
             return BLACK_COLOR; 
         }
@@ -192,7 +192,7 @@ impl Camera {
             // TODO: refactor this!!!
             let (scat_ray, scat_color, scattered) = hit_mat.scatter(&r, &hr);
             return if scattered {
-                let rc = self.ray_color(scat_ray, depth - 1, world);
+                let rc = Self::ray_color(scat_ray, depth - 1, world);
                 Color{r: rc.r * scat_color.r, g: rc.g * scat_color.g, b: rc.b * scat_color.b}
             } else {
                 BLACK_COLOR

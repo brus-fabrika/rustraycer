@@ -54,7 +54,7 @@ impl Point3d {
     //}
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Color{r: f32, g: f32, b: f32}
 
 /*impl Color {
@@ -204,7 +204,7 @@ fn main() {
         focus_dist: 10.0,
     };
     
-    let mut camera = Camera::initialize(16.0 / 9.0, IMAGE_WIDTH, 50, 10, cv);
+    let mut camera = Camera::initialize(16.0 / 9.0, IMAGE_WIDTH, 50, 5, cv);
 
     // Render
     use std::time::Instant;
