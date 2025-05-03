@@ -64,7 +64,7 @@ impl Material for Dielectric {
 
         let cannot_refract = ri * sin_theta > 1.0;
 
-        let cannot_refract = cannot_refract || (self.reflectance(cos_theta, ri.clone()) > rand::rng().random_range(0.0..1.0));
+        let cannot_refract = cannot_refract || (self.reflectance(cos_theta, ri) > rand::rng().random_range(0.0..1.0));
 
         let direction = if cannot_refract {Vec3d::reflect(&unit_dir, &hr.normal.clone())} else { Vec3d::refract(unit_dir, hr.normal.clone(), ri) };
 

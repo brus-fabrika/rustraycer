@@ -1,3 +1,5 @@
+use core::f32;
+
 use crate::{hit_record::{Hit, HittableList}, interval::Interval, vec3d::Vec3d, Color, Point3d};
 use rand::Rng;
 
@@ -10,7 +12,7 @@ pub struct Ray {
 
 impl Ray {
     pub fn new(origin: Point3d, direction: Vec3d) -> Ray {
-        return Ray{origin, direction} 
+        Ray{origin, direction} 
     }
     
     pub fn at(&self, t: f32) -> Point3d {
@@ -56,6 +58,10 @@ pub struct Camera {
     //w: Vec3d,
 }
 
+const BLACK_COLOR: Color = Color{r: 0.0, g: 0.0, b: 0.0};
+const BLACK_VEC:Vec3d = Vec3d{x: 0.0, y: 0.0, z: 0.0};
+const SOMECOLOR_VEC:Vec3d = Vec3d{x: 0.5, y: 0.7, z: 1.0};
+
 impl Camera {
     pub fn initialize(aspect_ratio: f32, image_width: u16, max_depth: u8, spp: u16, cv: CameraView) -> Camera {
 
@@ -71,7 +77,7 @@ impl Camera {
         // Determine viewport dimensions
         //let focal_length: f32 = Vec3d::sub(&cv.lookfrom.as_vec3d(), &cv.lookat.as_vec3d()).length();
 
-        let theta = cv.vfov * 2.0 * 3.1415 / 360.0;
+        let theta = cv.vfov * 2.0 * f32::consts::PI / 360.0;
         let h = f32::tan(theta / 2.0);
 
         let viewport_height: f32 = 2.0 * h * cv.focus_dist;
@@ -95,7 +101,7 @@ impl Camera {
         let pixel00_loc = Point3d::from_vec3d(Vec3d::add(viewport_upper_left, &Vec3d::mul(&Vec3d::add(&pixel_delta_u, &pixel_delta_v), 0.5)));
 
         // Calculate the camera defocus disk basis vectors
-        let defocus_radius = cv.focus_dist * f32::tan((cv.defocus_angle / 2.0) * 2.0 * 3.1415 / 360.0);
+        let defocus_radius = cv.focus_dist * f32::tan((cv.defocus_angle / 2.0) * 2.0 * f32::consts::PI / 360.0);
         let defocus_disk_u = Vec3d::mul(&u, defocus_radius); 
         let defocus_disk_v = Vec3d::mul(&v, defocus_radius); 
 
@@ -134,12 +140,10 @@ impl Camera {
         // sampled point around the pixel location i, j
         let offset = self.sample_square();
         
-        let pixel_shift = &Vec3d::add(&Vec3d::mul(&self.pixel_delta_u, f32::from(i) + offset.x), &Vec3d::mul(&self.pixel_delta_v, f32::from(j) + offset.y));
-        let pixel_sample = Vec3d::add(&self.pixel00_loc.as_vec3d(), pixel_shift);
-
+        let pixel_shift = Vec3d::add(&Vec3d::mul(&self.pixel_delta_u, f32::from(i) + offset.x), &Vec3d::mul(&self.pixel_delta_v, f32::from(j) + offset.y));
+        let pixel_sample = self.pixel00_loc.as_vec3d() + pixel_shift;
         let ray_origin = if self.defocus_angle > 0.0 { self.defocus_disk_sample() } else { self.center.clone() };
-        let ray_direction = Vec3d::sub(&pixel_sample, &ray_origin.as_vec3d());
-
+        let ray_direction = pixel_sample - ray_origin.as_vec3d();
         Ray::new(ray_origin, ray_direction)
     }
 
@@ -164,15 +168,15 @@ impl Camera {
             
             for i in 0 .. self.image_width {
 
-                let mut pixel_color = Vec3d::new(0.0, 0.0, 0.0);
+                let mut pixel_color = BLACK_VEC; 
 
                 for _ in 0 .. self.samples_per_pixel {
                     let r = self.get_ray(i, j);
                     let pc = self.ray_color(r, self.max_depth, world);
-                    pixel_color = Vec3d::add(&pixel_color, &Vec3d::new(pc.r, pc.g, pc.b));
+                    pixel_color = pixel_color + Vec3d::new(pc.r, pc.g, pc.b);
                 }
                 
-                pixel_color = Vec3d::mul(&pixel_color, 1.0 / f32::from(self.samples_per_pixel));
+                pixel_color = pixel_color / f32::from(self.samples_per_pixel);
 
                 self.pixels.push(Color { r: pixel_color.x, g: pixel_color.y, b: pixel_color.z });
             }
@@ -181,24 +185,24 @@ impl Camera {
 
     fn ray_color(&self, r: Ray, depth: u8, world: &HittableList) -> Color {
         if depth == 0 {
-            return Color {r: 0.0, g: 0.0, b: 0.0};
+            return BLACK_COLOR; 
         }
 
-        if let Some((hr, hit_mat)) = world.hit(&r, &Interval::new(0.001, f32::INFINITY)) {
+        if let Some((hr, hit_mat)) = world.hit(&r, Interval{min: 0.001, max: f32::INFINITY}) {
             // TODO: refactor this!!!
             let (scat_ray, scat_color, scattered) = hit_mat.scatter(&r, &hr);
             return if scattered {
                 let rc = self.ray_color(scat_ray, depth - 1, world);
                 Color{r: rc.r * scat_color.r, g: rc.g * scat_color.g, b: rc.b * scat_color.b}
             } else {
-                Color{r: 0.0, g: 0.0, b: 0.0}
+                BLACK_COLOR
             }; 
         }
 
         let unit_direction = Vec3d::unit(&r.direction);
         let a = 0.5 * (unit_direction.y + 1.0);
 
-        let cv = Vec3d::add(&Vec3d::mul(&Vec3d::new(1.0, 1.0, 1.0), 1.0 - a), &Vec3d::mul(&Vec3d::new(0.5, 0.7, 1.0), a));
+        let cv = BLACK_VEC * (1.0 - a) + SOMECOLOR_VEC * a;
 
         Color{r: cv.x, g: cv.y, b: cv.z}
     }
@@ -206,5 +210,5 @@ impl Camera {
 
 fn get_image_height(w: u16, a: f32) -> u16 {
     let hf: f32 = f32::from(w) / a;
-    return if hf < 1.0 { 1 } else { hf as u16 }
+    if hf < 1.0 { 1 } else { hf as u16 }
 }

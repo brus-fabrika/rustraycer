@@ -88,7 +88,7 @@ fn write_color(f: &mut fs::File, c: &Color) {
     let ig = (256.0 * INTENSITY.clamp(g)) as u8;
     let ib = (256.0 * INTENSITY.clamp(b)) as u8;
 
-    write!(f, "{ir} {ig} {ib}\n").expect("Cannot write to file");
+    writeln!(f, "{ir} {ig} {ib}").expect("Cannot write to file");
 }
 
 
@@ -217,7 +217,7 @@ fn main() {
     println!("Saving image to file...");
 
     let mut f = fs::File::create("rendered.ppm").expect("Cannot create rendered image file");
-    write!(f, "P3\n{} {}\n255\n", camera.image_width, camera.image_height).expect("Cannot write to file");
+    writeln!(f, "P3\n{} {}\n255", camera.image_width, camera.image_height).expect("Cannot write to file");
     camera.pixels.iter().for_each(|c| write_color(&mut f, c));
 
     elapsed = now.elapsed();
