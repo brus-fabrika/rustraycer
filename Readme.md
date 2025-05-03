@@ -1,6 +1,6 @@
 # Description
-Yet another rust implementation of [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html). This is the rendered example for depth 50 and 10 samples per pixel:
-![img](rendered_50_10.png)
+Yet another rust implementation of [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html). This is the rendered example for depth 50 and 500 samples per pixel:
+![img](rendered_50md_500ssp.png)
 
 # Todo list
 - [ ] command line parameters for depth, samples per pixel and file name
