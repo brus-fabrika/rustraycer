@@ -51,9 +51,9 @@ impl Hit for Sphere {
         
         let dsqrt = discriminant.sqrt();
         // find the nearest root that lies in the acceptable range
-        let root = (h - dsqrt) / a;
+        let mut root = (h - dsqrt) / a;
         if !ray_t.surrounds(root) {
-            let root = (h + dsqrt) / a;
+            root = (h + dsqrt) / a;
             if !ray_t.surrounds(root) {
                 return None;
             }
