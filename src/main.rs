@@ -97,7 +97,7 @@ fn main() {
 
     // World
     let mut world = HittableList::default();
-/*
+
     let material_ground = Rc::new(Lambertian{albedo: Color{r: 0.5, g: 0.5, b: 0.5,}});
     world.add(Box::new(Sphere::new(Point3d::new(0.0, -1000.0, 0.0), 1000.0, material_ground.clone())));
 
@@ -174,8 +174,8 @@ fn main() {
             Sphere::new(Point3d::new(4.0, 1.0, 0.0), 1.0, Rc::new(Metal{albedo: Color{r: 0.7, g: 0.6, b: 0.5}, fuzz: 0.0}))
         )
     );
-*/
 
+/*
     let material_ground = Rc::new(Lambertian{albedo: Color{r: 0.8, g: 0.8, b: 0.0,}});
     let material_center = Rc::new(Lambertian{albedo: Color{r: 0.1, g: 0.2, b: 0.5,}});
     let material_left = Rc::new(Dielectric{refraction_index: 1.5});
@@ -193,7 +193,7 @@ fn main() {
     world.add(Box::new(Sphere::new(Point3d::new(1.0, 0.0, -1.0), 0.5, material_right.clone())));
     
     world.add(Box::new(Sphere::new(Point3d::new(0.0, -100.5, -1.0), 100.0, material_ground.clone())));
-
+*/
     // Camera
     let cv = CameraView {
         vfov: 20.0,
