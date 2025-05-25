@@ -5,6 +5,7 @@ mod hit_record;
 mod material;
 mod interval;
 
+use std::sync::Arc;
 use std::{fs, rc::Rc};
 use std::io::Write;
 
@@ -101,20 +102,20 @@ fn main() {
     // World
     let mut world = HittableList::default();
 
-    let ground_material: Rc<dyn Material> = match c.ground.material.as_str() {
+    let ground_material: Arc<dyn Material + Send + Sync> = match c.ground.material.as_str() {
         "diffuse" => {
             let diffuse = c.ground.diffuse.expect("Ground diffuse params missing");
-            Rc::new(Lambertian{albedo: Color{r: diffuse.albedo[0], g: diffuse.albedo[1], b: diffuse.albedo[2]}})
+            Arc::new(Lambertian{albedo: Color{r: diffuse.albedo[0], g: diffuse.albedo[1], b: diffuse.albedo[2]}})
         },
         "metal" => {
             let metal = c.ground.metal.expect("Ground metal params missing");
-            Rc::new(Metal{albedo: Color{r: metal.albedo[0], g: metal.albedo[1], b: metal.albedo[2]}, fuzz: metal.fuzz})
+            Arc::new(Metal{albedo: Color{r: metal.albedo[0], g: metal.albedo[1], b: metal.albedo[2]}, fuzz: metal.fuzz})
         },
         "dielectric" => {
             let dielectric = c.ground.dielectric.expect("Ground dielectric params missing");
-            Rc::new(Dielectric{refraction_index: dielectric.refraction})
+            Arc::new(Dielectric{refraction_index: dielectric.refraction})
         },
-        _ => Rc::new(Lambertian{albedo: Color{r: 0.5, g: 0.5, b: 0.5,}})
+        _ => Arc::new(Lambertian{albedo: Color{r: 0.5, g: 0.5, b: 0.5,}})
     };
 
     let ground_point = Point3d::new(c.ground.center[0], c.ground.center[1], c.ground.center[2]);
@@ -143,7 +144,7 @@ fn main() {
                         
                         world.add(
                             Box::new(
-                                Sphere::new(center, 0.2, Rc::new(Lambertian{albedo}))
+                                Sphere::new(center, 0.2, Arc::new(Lambertian{albedo}))
                             )
                         );
                    
@@ -160,7 +161,7 @@ fn main() {
                         
                         world.add(
                             Box::new(
-                                Sphere::new(center, 0.2, Rc::new(Metal{albedo, fuzz}))
+                                Sphere::new(center, 0.2, Arc::new(Metal{albedo, fuzz}))
                             )
                         );
                     },
@@ -168,7 +169,7 @@ fn main() {
                     _ => {
                         world.add(
                             Box::new(
-                                Sphere::new(center, 0.2, Rc::new(Dielectric{refraction_index: 1.5}))
+                                Sphere::new(center, 0.2, Arc::new(Dielectric{refraction_index: 1.5}))
                             )
                         );
                     }
@@ -179,28 +180,28 @@ fn main() {
     
     world.add(
         Box::new(
-            Sphere::new(Point3d::new(0.0, 1.0, 0.0), 1.0, Rc::new(Dielectric{refraction_index: 1.5}))
+            Sphere::new(Point3d::new(0.0, 1.0, 0.0), 1.0, Arc::new(Dielectric{refraction_index: 1.5}))
         )
     );
     
     world.add(
         Box::new(
-            Sphere::new(Point3d::new(-4.0, 1.0, 0.0), 1.0, Rc::new(Lambertian{albedo: Color{r: 0.4, g: 0.2, b: 0.1}}))
+            Sphere::new(Point3d::new(-4.0, 1.0, 0.0), 1.0, Arc::new(Lambertian{albedo: Color{r: 0.4, g: 0.2, b: 0.1}}))
         )
     );
   
     world.add(
         Box::new(
-            Sphere::new(Point3d::new(4.0, 1.0, 0.0), 1.0, Rc::new(Metal{albedo: Color{r: 0.7, g: 0.6, b: 0.5}, fuzz: 0.0}))
+            Sphere::new(Point3d::new(4.0, 1.0, 0.0), 1.0, Arc::new(Metal{albedo: Color{r: 0.7, g: 0.6, b: 0.5}, fuzz: 0.0}))
         )
     );
 
 /*
-    let material_ground = Rc::new(Lambertian{albedo: Color{r: 0.8, g: 0.8, b: 0.0,}});
-    let material_center = Rc::new(Lambertian{albedo: Color{r: 0.1, g: 0.2, b: 0.5,}});
-    let material_left = Rc::new(Dielectric{refraction_index: 1.5});
-    let material_bubble = Rc::new(Dielectric{refraction_index: 1.5});
-    let material_right = Rc::new(Metal{albedo: Color{r: 0.8, g: 0.6, b: 0.2,}, fuzz: 1.0});
+    let material_ground = Arc::new(Lambertian{albedo: Color{r: 0.8, g: 0.8, b: 0.0,}});
+    let material_center = Arc::new(Lambertian{albedo: Color{r: 0.1, g: 0.2, b: 0.5,}});
+    let material_left = Arc::new(Dielectric{refraction_index: 1.5});
+    let material_bubble = Arc::new(Dielectric{refraction_index: 1.5});
+    let material_right = Arc::new(Metal{albedo: Color{r: 0.8, g: 0.6, b: 0.2,}, fuzz: 1.0});
 
     world.add(Box::new(Sphere::new(Point3d::new(0.0, 0.0, -1.2), 0.5, material_center.clone())));
 
@@ -224,13 +225,13 @@ fn main() {
         focus_dist: 10.0,
     };
     
-    let mut camera = Camera::initialize(16.0 / 9.0, c.width, c.max_depth, c.samples_per_pixel, cv);
+    let camera = Arc::new(Camera::initialize(16.0 / 9.0, c.width, c.max_depth, c.samples_per_pixel, cv));
 
     // Render
     use std::time::Instant;
     let now = Instant::now();
 
-    camera.render(&world);
+    Camera::render(camera.clone(), Arc::new(world));
 
     let mut elapsed = now.elapsed();
     println!("Calculated in: {:.2?}", elapsed);
@@ -238,7 +239,10 @@ fn main() {
 
     let mut f = fs::File::create("rendered.ppm").expect("Cannot create rendered image file");
     writeln!(f, "P3\n{} {}\n255", camera.image_width, camera.image_height).expect("Cannot write to file");
-    camera.pixels.iter().for_each(|c| write_color(&mut f, c));
+    
+    let pixels = camera.pixels.lock().unwrap();
+
+    pixels.iter().for_each(|c| write_color(&mut f, c));
 
     elapsed = now.elapsed();
     println!("Total elapsed: {:.2?}", elapsed);

@@ -1,4 +1,5 @@
 use core::f32;
+use std::{sync::{Arc, Mutex}, thread};
 
 use crate::{hit_record::{Hit, HittableList}, interval::Interval, vec3d::Vec3d, Color, Point3d};
 use rand::Rng;
@@ -40,7 +41,7 @@ pub struct Camera {
     pixel00_loc: Point3d,
     pixel_delta_u: Vec3d,
     pixel_delta_v: Vec3d,
-    pub(super) pixels: Vec<Color>,
+    pub(super) pixels: Mutex<Vec<Color>>,
 
     defocus_angle: f32,
 
@@ -104,7 +105,7 @@ impl Camera {
             pixel00_loc,
             pixel_delta_u,
             pixel_delta_v,
-            pixels: vec![],
+            pixels: Mutex::new(vec![BLACK_COLOR; usize::from(image_width) * usize::from(image_height)]),
             defocus_angle: cv.defocus_angle,
             defocus_disk_u,
             defocus_disk_v,
@@ -139,32 +140,86 @@ impl Camera {
         )
     }
 
+    fn subrender(self: Arc<Self>, start_row: u16, end_row: u16, world: Arc<HittableList>) {
+        
+        for j in start_row .. end_row {
+
+            for i in 0 .. self.image_width {
+
+                let mut pixel_color = BLACK_VEC; 
+
+                for _ in 0 .. self.samples_per_pixel {
+                    let r = self.get_ray(i, j);
+                    let pc = Self::ray_color(r, self.max_depth, &world);
+                    pixel_color = pixel_color + Vec3d::new(pc.r, pc.g, pc.b);
+                }
+                
+                pixel_color = pixel_color / f32::from(self.samples_per_pixel);
+                
+                let pos: usize = usize::from(i) + usize::from(j)*usize::from(self.image_width);
+                self.pixels.lock().unwrap()[pos] = Color { r: pixel_color.x, g: pixel_color.y, b: pixel_color.z };
+            }
+        }
+
+    }
+
+    pub fn render(self: Arc<Self>, world: Arc<HittableList>) {
+        let n = 16;
+        let rows = self.image_height / n;
+        let rows_rem = self.image_height % n;
+
+        let mut handles: Vec<thread::JoinHandle<()>> = vec![];
+
+        for i in 0 .. n {
+            let w = Arc::clone(&world);
+            let c = self.clone();
+            let h = thread::spawn(
+                move || c.subrender(i * rows, (i + 1) * rows, w)
+            );
+
+            handles.push(h);
+        }
+       
+        if rows_rem > 0 {
+            let c = self.clone();
+            handles.push( thread::spawn(
+                move || c.subrender(n * rows, self.image_height, world.clone())
+            ));
+        }
+       
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+/*
     pub fn render(&mut self, world: &HittableList) {
         let mut log_threshold = 0;
 
-            for j in 0 .. self.image_height {
-                let processed = (100.0 * f32::from(j+1) / f32::from(self.image_height)) as i32;
-                if processed >= log_threshold {
-                    println!("Scanlines Processed {} ({}%)...", j, processed);
-                    log_threshold += 10;
+        for j in 0 .. self.image_height {
+            let processed = (100.0 * f32::from(j+1) / f32::from(self.image_height)) as i32;
+            if processed >= log_threshold {
+                println!("Scanlines Processed {} ({}%)...", j, processed);
+                log_threshold += 10;
+            }
+            
+            for i in 0 .. self.image_width {
+
+                let mut pixel_color = BLACK_VEC; 
+
+                for _ in 0 .. self.samples_per_pixel {
+                    let r = self.get_ray(i, j);
+                    let pc = Self::ray_color(r, self.max_depth, world);
+                    pixel_color = pixel_color + Vec3d::new(pc.r, pc.g, pc.b);
                 }
                 
-                for i in 0 .. self.image_width {
+                pixel_color = pixel_color / f32::from(self.samples_per_pixel);
 
-                    let mut pixel_color = BLACK_VEC; 
-
-                    for _ in 0 .. self.samples_per_pixel {
-                        let r = self.get_ray(i, j);
-                        let pc = Self::ray_color(r, self.max_depth, world);
-                        pixel_color = pixel_color + Vec3d::new(pc.r, pc.g, pc.b);
-                    }
-                    
-                    pixel_color = pixel_color / f32::from(self.samples_per_pixel);
-
-                    self.pixels.push(Color { r: pixel_color.x, g: pixel_color.y, b: pixel_color.z });
-                }
+                self.pixels.push(Color { r: pixel_color.x, g: pixel_color.y, b: pixel_color.z });
             }
+        }
     }
+*/
 
     fn ray_color(r: Ray, depth: u8, world: &HittableList) -> Color {
         if depth == 0 {
