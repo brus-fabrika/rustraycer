@@ -32,7 +32,6 @@ pub struct CameraView {
 
 #[derive(Default)]
 pub struct Camera {
-    //aspect_ratio: f32,
     pub(super) image_width: u16,
     pub(super) image_height: u16,
     samples_per_pixel: u16,          // count of random samples per pixel (antialiasing)
@@ -47,15 +46,6 @@ pub struct Camera {
 
     defocus_disk_u: Vec3d,
     defocus_disk_v: Vec3d,
-
-    //pub(super) vfov: f32, // vertical view angle (field of view)
-    //pub(super) lookfrom: Point3d, // point camera is looking from
-    //pub(super) lookat: Point3d, // point camera is looking at
-    //pub(super) vup: Vec3d, // camera-relative up direction
-
-    //u: Vec3d, // camera frame basis vectors
-    //v: Vec3d,
-    //w: Vec3d,
 }
 
 const BLACK_COLOR: Color = Color{r: 0.0, g: 0.0, b: 0.0};
@@ -75,7 +65,6 @@ impl Camera {
 
         // Camera
         // Determine viewport dimensions
-        //let focal_length: f32 = Vec3d::sub(&cv.lookfrom.as_vec3d(), &cv.lookat.as_vec3d()).length();
 
         let theta = cv.vfov * 2.0 * f32::consts::PI / 360.0;
         let h = f32::tan(theta / 2.0);
@@ -119,13 +108,6 @@ impl Camera {
             defocus_angle: cv.defocus_angle,
             defocus_disk_u,
             defocus_disk_v,
-            //vfov: cv.vfov,
-            //lookfrom: cv.lookfrom,
-            //lookat: cv.lookat,
-            //vup: cv.vup,
-            //u,
-            //v,
-            //w,
         }
     }
 
@@ -144,6 +126,7 @@ impl Camera {
         let pixel_sample = self.pixel00_loc.as_vec3d() + pixel_shift;
         let ray_origin = if self.defocus_angle > 0.0 { self.defocus_disk_sample() } else { self.center.clone() };
         let ray_direction = pixel_sample - ray_origin.as_vec3d();
+        
         Ray::new(ray_origin, ray_direction)
     }
 
@@ -159,28 +142,28 @@ impl Camera {
     pub fn render(&mut self, world: &HittableList) {
         let mut log_threshold = 0;
 
-        for j in 0 .. self.image_height {
-            let processed = (100.0 * f32::from(j+1) / f32::from(self.image_height)) as i32;
-            if processed >= log_threshold {
-                println!("Scanlines Processed {} ({}%)...", j, processed);
-                log_threshold += 10;
-            }
-            
-            for i in 0 .. self.image_width {
-
-                let mut pixel_color = BLACK_VEC; 
-
-                for _ in 0 .. self.samples_per_pixel {
-                    let r = self.get_ray(i, j);
-                    let pc = Self::ray_color(r, self.max_depth, world);
-                    pixel_color = pixel_color + Vec3d::new(pc.r, pc.g, pc.b);
+            for j in 0 .. self.image_height {
+                let processed = (100.0 * f32::from(j+1) / f32::from(self.image_height)) as i32;
+                if processed >= log_threshold {
+                    println!("Scanlines Processed {} ({}%)...", j, processed);
+                    log_threshold += 10;
                 }
                 
-                pixel_color = pixel_color / f32::from(self.samples_per_pixel);
+                for i in 0 .. self.image_width {
 
-                self.pixels.push(Color { r: pixel_color.x, g: pixel_color.y, b: pixel_color.z });
+                    let mut pixel_color = BLACK_VEC; 
+
+                    for _ in 0 .. self.samples_per_pixel {
+                        let r = self.get_ray(i, j);
+                        let pc = Self::ray_color(r, self.max_depth, world);
+                        pixel_color = pixel_color + Vec3d::new(pc.r, pc.g, pc.b);
+                    }
+                    
+                    pixel_color = pixel_color / f32::from(self.samples_per_pixel);
+
+                    self.pixels.push(Color { r: pixel_color.x, g: pixel_color.y, b: pixel_color.z });
+                }
             }
-        }
     }
 
     fn ray_color(r: Ray, depth: u8, world: &HittableList) -> Color {

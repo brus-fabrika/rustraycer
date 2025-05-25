@@ -1,3 +1,4 @@
+mod config;
 mod camera;
 mod vec3d;
 mod hit_record;
@@ -9,6 +10,7 @@ use std::io::Write;
 
 use camera::{Camera, CameraView};
 
+use config::Settings;
 use hit_record::{HittableList, Sphere};
 use interval::Interval;
 use material::{Dielectric, Lambertian, Metal};
@@ -95,11 +97,16 @@ fn write_color(f: &mut fs::File, c: &Color) {
 
 fn main() {
 
+    let c = Settings::new().unwrap();
+    println!("{:?}", c);
+
     // World
     let mut world = HittableList::default();
 
     let material_ground = Rc::new(Lambertian{albedo: Color{r: 0.5, g: 0.5, b: 0.5,}});
-    world.add(Box::new(Sphere::new(Point3d::new(0.0, -1000.0, 0.0), 1000.0, material_ground.clone())));
+    let ground_center = c.ground.center;
+    let ground_point = Point3d::new(ground_center[0], ground_center[1], ground_center[2]);
+    world.add(Box::new(Sphere::new(ground_point, c.ground.radius, material_ground.clone())));
 
     for a in -11 .. 11 {
         for b in -11 .. 11 {
