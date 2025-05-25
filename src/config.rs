@@ -2,34 +2,37 @@ use serde_derive::Deserialize;
 use config::{Config, ConfigError, File};
 
 #[derive(Debug, Deserialize)]
-struct Diffuse {
-    albedo: [f32; 3],
+pub(crate) struct Diffuse {
+    pub(crate) albedo: [f32; 3],
 }
 
 #[derive(Debug, Deserialize)]
-struct Metal {
-    albedo: [f32; 3],
-    fuzz: f32,
+pub(crate) struct Metal {
+    pub(crate) albedo: [f32; 3],
+    pub(crate) fuzz: f32,
 }
 
 #[derive(Debug, Deserialize)]
-struct Dielectric {
-    refraction: f32,
+pub(crate) struct Dielectric {
+    pub(crate) refraction: f32,
 }
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct Ground {
-    color: [f32; 3],
+    pub(crate) color: [f32; 3],
     pub(crate) center: [f32; 3],
     pub(crate) radius: f32,
-    material: String,
-    diffuse: Option<Diffuse>,
-    metal: Option<Metal>,
-    dielectric: Option<Dielectric>,
+    pub(crate) material: String,
+    pub(crate) diffuse: Option<Diffuse>,
+    pub(crate) metal: Option<Metal>,
+    pub(crate) dielectric: Option<Dielectric>,
 }
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct Settings {
+    pub width: u16,
+    pub samples_per_pixel: u16,
+    pub max_depth: u8,
     pub ground: Ground,
 } 
 

@@ -13,12 +13,10 @@ use camera::{Camera, CameraView};
 use config::Settings;
 use hit_record::{HittableList, Sphere};
 use interval::Interval;
-use material::{Dielectric, Lambertian, Metal};
+use material::{Dielectric, Lambertian, Material, Metal};
 use rand::Rng;
 
 use crate::vec3d::Vec3d;
-
-const IMAGE_WIDTH: u16 = 1200;
 
 #[derive(Debug, Default)]
 struct Point3d(Vec3d);
@@ -103,10 +101,25 @@ fn main() {
     // World
     let mut world = HittableList::default();
 
-    let material_ground = Rc::new(Lambertian{albedo: Color{r: 0.5, g: 0.5, b: 0.5,}});
-    let ground_center = c.ground.center;
-    let ground_point = Point3d::new(ground_center[0], ground_center[1], ground_center[2]);
-    world.add(Box::new(Sphere::new(ground_point, c.ground.radius, material_ground.clone())));
+    let ground_material: Rc<dyn Material> = match c.ground.material.as_str() {
+        "diffuse" => {
+            let diffuse = c.ground.diffuse.expect("Ground diffuse params missing");
+            Rc::new(Lambertian{albedo: Color{r: diffuse.albedo[0], g: diffuse.albedo[1], b: diffuse.albedo[2]}})
+        },
+        "metal" => {
+            let metal = c.ground.metal.expect("Ground metal params missing");
+            Rc::new(Metal{albedo: Color{r: metal.albedo[0], g: metal.albedo[1], b: metal.albedo[2]}, fuzz: metal.fuzz})
+        },
+        "dielectric" => {
+            let dielectric = c.ground.dielectric.expect("Ground dielectric params missing");
+            Rc::new(Dielectric{refraction_index: dielectric.refraction})
+        },
+        _ => Rc::new(Lambertian{albedo: Color{r: 0.5, g: 0.5, b: 0.5,}})
+    };
+
+    let ground_point = Point3d::new(c.ground.center[0], c.ground.center[1], c.ground.center[2]);
+
+    world.add(Box::new(Sphere::new(ground_point, c.ground.radius, ground_material)));
 
     for a in -11 .. 11 {
         for b in -11 .. 11 {
@@ -211,7 +224,7 @@ fn main() {
         focus_dist: 10.0,
     };
     
-    let mut camera = Camera::initialize(16.0 / 9.0, IMAGE_WIDTH, 50, 10, cv);
+    let mut camera = Camera::initialize(16.0 / 9.0, c.width, c.max_depth, c.samples_per_pixel, cv);
 
     // Render
     use std::time::Instant;

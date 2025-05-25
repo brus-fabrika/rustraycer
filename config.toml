@@ -1,3 +1,7 @@
+width = 900
+samples_per_pixel = 10
+max_depth = 50
+
 [ground]
 material = "diffuse"
 center = [0.0, -1000.0, 0.0]
