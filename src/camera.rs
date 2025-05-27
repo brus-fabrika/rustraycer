@@ -141,8 +141,9 @@ impl Camera {
     }
 
     fn subrender(self: Arc<Self>, start_row: u16, end_row: u16, world: Arc<HittableList>) {
-        
         for j in start_row .. end_row {
+
+            let mut v: Vec<Color> = vec![];
 
             for i in 0 .. self.image_width {
 
@@ -156,21 +157,23 @@ impl Camera {
                 
                 pixel_color = pixel_color / f32::from(self.samples_per_pixel);
                 
-                let pos: usize = usize::from(i) + usize::from(j)*usize::from(self.image_width);
-                self.pixels.lock().unwrap()[pos] = Color { r: pixel_color.x, g: pixel_color.y, b: pixel_color.z };
+                v.push(Color { r: pixel_color.x, g: pixel_color.y, b: pixel_color.z });
             }
+            
+            let p1 = usize::from(j) * usize::from(self.image_width);
+            let p2 = usize::from(self.image_width) + p1;
+            self.pixels.lock().unwrap()[p1..p2].copy_from_slice(&v);
         }
-
     }
 
-    pub fn render(self: Arc<Self>, world: Arc<HittableList>) {
-        let n = 16;
-        let rows = self.image_height / n;
-        let rows_rem = self.image_height % n;
+    pub fn render(self: Arc<Self>, world: Arc<HittableList>, thread_num: u8) {
+        let thread_num = if thread_num > 0 { thread_num as u16 } else { 1u16 };
+        let rows = self.image_height / thread_num;
+        let rows_rem = self.image_height % thread_num;
 
         let mut handles: Vec<thread::JoinHandle<()>> = vec![];
 
-        for i in 0 .. n {
+        for i in 0 .. thread_num {
             let w = Arc::clone(&world);
             let c = self.clone();
             let h = thread::spawn(
@@ -183,7 +186,7 @@ impl Camera {
         if rows_rem > 0 {
             let c = self.clone();
             handles.push( thread::spawn(
-                move || c.subrender(n * rows, self.image_height, world.clone())
+                move || c.subrender(thread_num * rows, self.image_height, world.clone())
             ));
         }
        

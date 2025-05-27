@@ -22,24 +22,24 @@ impl HitRecord {
     }
 }
 
-pub trait Hit {
-    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material + Send + Sync>)>;
+pub trait Hit: Send + Sync {
+    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material>)>;
 }
 
 pub struct Sphere {
     center: Point3d,
     radius: f32,
-    material: Arc<dyn Material + Send + Sync>,
+    material: Arc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3d, radius: f32, material: Arc<dyn Material + Send + Sync>) -> Sphere {
+    pub fn new(center: Point3d, radius: f32, material: Arc<dyn Material>) -> Sphere {
         Sphere{center, radius, material}
     }
 }
 
 impl Hit for Sphere {
-    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material + Send + Sync>)> {
+    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material>)> {
         let oc = self.center.as_vec3d() - r.origin.as_vec3d();
         let a = r.direction.length_squared();
         let h = Vec3d::dot(&r.direction, &oc);
@@ -77,22 +77,22 @@ impl Hit for Sphere {
 
 #[derive(Default)]
 pub struct HittableList {
-    objects: Vec<Box<dyn Hit + Send + Sync>>
+    objects: Vec<Box<dyn Hit>>
 }
 
 impl HittableList {
-    pub fn add(&mut self, o: Box<dyn Hit + Send + Sync>) {
+    pub fn add(&mut self, o: Box<dyn Hit>) {
         self.objects.push(o);
     }
 }
 
 impl Hit for HittableList {
-    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material + Send + Sync>)> {
+    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material>)> {
         let mut temp_rec = HitRecord::default();
 
         let mut closest_so_far = ray_t.max;
 
-        let mut hit_mat: Option<Arc<dyn Material + Send + Sync>> = None;
+        let mut hit_mat: Option<Arc<dyn Material>> = None;
 
         for o in self.objects.iter() {
             if let Some((hr, m)) = o.hit(r, Interval{min: ray_t.min, max: closest_so_far}) {

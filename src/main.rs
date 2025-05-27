@@ -6,7 +6,7 @@ mod material;
 mod interval;
 
 use std::sync::Arc;
-use std::{fs, rc::Rc};
+use std::fs;
 use std::io::Write;
 
 use camera::{Camera, CameraView};
@@ -55,7 +55,7 @@ impl Point3d {
     //}
 }
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 struct Color{r: f32, g: f32, b: f32}
 
 /*impl Color {
@@ -97,12 +97,11 @@ fn write_color(f: &mut fs::File, c: &Color) {
 fn main() {
 
     let c = Settings::new().unwrap();
-    println!("{:?}", c);
 
     // World
     let mut world = HittableList::default();
 
-    let ground_material: Arc<dyn Material + Send + Sync> = match c.ground.material.as_str() {
+    let ground_material: Arc<dyn Material> = match c.ground.material.as_str() {
         "diffuse" => {
             let diffuse = c.ground.diffuse.expect("Ground diffuse params missing");
             Arc::new(Lambertian{albedo: Color{r: diffuse.albedo[0], g: diffuse.albedo[1], b: diffuse.albedo[2]}})
@@ -231,7 +230,11 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    Camera::render(camera.clone(), Arc::new(world));
+    let thread_num = if c.multithread_enabled { c.threads } else { 1 };
+
+    println!("Running renderer with {thread_num} threads");
+
+    Camera::render(camera.clone(), Arc::new(world), thread_num);
 
     let mut elapsed = now.elapsed();
     println!("Calculated in: {:.2?}", elapsed);

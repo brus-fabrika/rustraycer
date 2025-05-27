@@ -33,6 +33,8 @@ pub(crate) struct Settings {
     pub width: u16,
     pub samples_per_pixel: u16,
     pub max_depth: u8,
+    pub multithread_enabled: bool,
+    pub threads: u8,
     pub ground: Ground,
 } 
 
