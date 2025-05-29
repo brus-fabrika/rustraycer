@@ -9,11 +9,12 @@ use rand::Rng;
 pub struct Ray {
     pub origin: Point3d,
     pub direction: Vec3d,
+    pub tm: f32,
 }
 
 impl Ray {
-    pub fn new(origin: Point3d, direction: Vec3d) -> Ray {
-        Ray{origin, direction} 
+    pub fn new(origin: Point3d, direction: Vec3d, time: Option<f32>) -> Ray {
+        Ray{origin, direction, tm: time.unwrap_or(0.0)} 
     }
     
     pub fn at(&self, t: f32) -> Point3d {
@@ -127,8 +128,8 @@ impl Camera {
         let pixel_sample = self.pixel00_loc.as_vec3d() + pixel_shift;
         let ray_origin = if self.defocus_angle > 0.0 { self.defocus_disk_sample() } else { self.center.clone() };
         let ray_direction = pixel_sample - ray_origin.as_vec3d();
-        
-        Ray::new(ray_origin, ray_direction)
+
+        Ray::new(ray_origin, ray_direction, Some(rand::rng().random_range(0.0 .. 1.0)))
     }
 
     fn defocus_disk_sample(&self) -> Point3d {

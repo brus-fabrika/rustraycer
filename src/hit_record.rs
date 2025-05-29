@@ -27,20 +27,33 @@ pub trait Hit: Send + Sync {
 }
 
 pub struct Sphere {
-    center: Point3d,
+    //center: Point3d,
+    center: Ray,
     radius: f32,
     material: Arc<dyn Material>,
 }
 
 impl Sphere {
     pub fn new(center: Point3d, radius: f32, material: Arc<dyn Material>) -> Sphere {
-        Sphere{center, radius, material}
+        Self::new_dynamic(center.clone(), center, radius, material)
     }
+
+    pub fn new_dynamic(center: Point3d, center2: Point3d, radius: f32, material: Arc<dyn Material>) -> Sphere {
+        let d = center2.as_vec3d() - center.as_vec3d();
+        
+        Sphere {
+            center: Ray::new(center, d, None),
+            radius: radius.max(0.0), 
+            material
+        }
+    }
+
 }
 
 impl Hit for Sphere {
     fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material>)> {
-        let oc = self.center.as_vec3d() - r.origin.as_vec3d();
+        let current_center = self.center.at(r.tm);
+        let oc = current_center.as_vec3d() - r.origin.as_vec3d();
         let a = r.direction.length_squared();
         let h = Vec3d::dot(&r.direction, &oc);
         let c = oc.length_squared() - self.radius*self.radius;
@@ -60,7 +73,7 @@ impl Hit for Sphere {
         }
 
         let p = r.at(root);
-        let outward_normal = (p.as_vec3d() - self.center.as_vec3d()) / self.radius;
+        let outward_normal = (p.as_vec3d() - current_center.as_vec3d()) / self.radius;
 
         let mut hr = HitRecord {
             t: root,

@@ -11,12 +11,12 @@ pub struct Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, _ray_in: &Ray, hr: &HitRecord) -> (Ray, Color, bool) {
+    fn scatter(&self, ray_in: &Ray, hr: &HitRecord) -> (Ray, Color, bool) {
         let mut scatter_direction = Vec3d::add(&hr.normal, &Vec3d::random_unit());
         if scatter_direction.near_zero() {
             scatter_direction = hr.normal.clone();
         }
-        let scattered = Ray::new(hr.point.clone(), scatter_direction);
+        let scattered = Ray::new(hr.point.clone(), scatter_direction, Some(ray_in.tm));
         let attenuation = self.albedo.clone();
         (scattered, attenuation, true)
     }
@@ -32,7 +32,7 @@ impl Material for Metal {
     fn scatter(&self, ray_in: &Ray, hr: &HitRecord) -> (Ray, Color, bool) {
         let scatter_direction = Vec3d::reflect(&ray_in.direction, &hr.normal);
         let scatter_direction = Vec3d::unit(&scatter_direction) + Vec3d::random_unit() * self.fuzz;
-        let scattered = Ray::new(hr.point.clone(), scatter_direction);
+        let scattered = Ray::new(hr.point.clone(), scatter_direction, Some(ray_in.tm));
         let attenuation = self.albedo.clone(); 
         let is_scattered = Vec3d::dot(&scattered.direction, &hr.normal) > 0.0;
         (scattered, attenuation, is_scattered)
@@ -68,7 +68,7 @@ impl Material for Dielectric {
 
         let direction = if cannot_refract {Vec3d::reflect(&unit_dir, &hr.normal)} else { Vec3d::refract(unit_dir, hr.normal.clone(), ri) };
 
-        let scattered = Ray::new(hr.point.clone(), direction);
+        let scattered = Ray::new(hr.point.clone(), direction, Some(ray_in.tm));
         let attenuation = Color{r: 1.0, g: 1.0, b: 1.0};
         let is_scattered = true; 
         (scattered, attenuation, is_scattered)
