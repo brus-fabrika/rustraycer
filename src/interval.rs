@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Interval {
     pub min: f32,
     pub max: f32
@@ -6,6 +6,12 @@ pub struct Interval {
 
 impl Interval {
     pub fn new(min: f32, max: f32) -> Interval {
+        Interval{min, max}
+    }
+
+    pub fn from_intervals(a: &Interval, b: &Interval) -> Interval {
+        let min = if a.min < b.min { a.min } else { b.min };
+        let max = if a.max > b.max { a.max } else { b.max };
         Interval{min, max}
     }
 
@@ -33,6 +39,11 @@ impl Interval {
         } else {
             x
         }
+    }
+
+    pub fn expand(&self, delta: f32) -> Interval {
+        let padding = delta / 2.0; 
+        Interval { min: self.min - padding, max: self.max + padding }
     }
 }
 

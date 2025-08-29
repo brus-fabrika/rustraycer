@@ -1,11 +1,24 @@
-use std::ops::{Add, Sub, Mul, Div};
+use std::ops::{Index, Add, Sub, Mul, Div};
 use rand::Rng;
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Default, Clone)]
 pub struct  Vec3d {
     pub x: f32,
     pub y: f32,
     pub z: f32
+}
+
+impl Index<usize> for Vec3d {
+    type Output = f32;
+
+    fn index(&self, i:usize) -> &f32 {
+        match i {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("Index out of bound for Vec3d, should be in range 0..2")
+        }
+    }
 }
 
 impl Add for Vec3d {

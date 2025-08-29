@@ -5,7 +5,7 @@ use crate::{hit_record::{Hit, HittableList}, interval::Interval, vec3d::Vec3d, C
 use rand::Rng;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point3d,
     pub direction: Vec3d,

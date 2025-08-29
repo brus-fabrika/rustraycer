@@ -3,7 +3,7 @@ samples_per_pixel = 10
 max_depth = 50
 
 multithread_enabled = true
-threads = 16 
+threads = 8 
 
 [ground]
 material = "diffuse"

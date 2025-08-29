@@ -4,8 +4,10 @@ mod vec3d;
 mod hit_record;
 mod material;
 mod interval;
+mod aabb;
+mod bhv;
 
-use std::sync::Arc;
+use std::{ops::Index, sync::Arc};
 use std::fs;
 use std::io::Write;
 
@@ -17,10 +19,24 @@ use interval::Interval;
 use material::{Dielectric, Lambertian, Material, Metal};
 use rand::Rng;
 
+use crate::aabb::Aabb;
 use crate::vec3d::Vec3d;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 struct Point3d(Vec3d);
+
+impl Index<usize> for Point3d {
+    type Output = f32;
+
+    fn index(&self, i:usize) -> &f32 {
+        match i {
+            0 => &self.0.x,
+            1 => &self.0.y,
+            2 => &self.0.z,
+            _ => panic!("Index out of bound for Point3d, should be in range 0..2")
+        }
+    }
+}
 
 impl Point3d {
     fn new(x: f32, y: f32, z: f32) -> Point3d {
@@ -99,7 +115,11 @@ fn main() {
     let c = Settings::new().unwrap();
 
     // World
-    let mut world = HittableList::default();
+    //let mut world = HittableList::default();
+    let mut world = HittableList {
+        objects: vec![],
+        bbox: Aabb::default(),
+    };
 
     let ground_material: Arc<dyn Material> = match c.ground.material.as_str() {
         "diffuse" => {

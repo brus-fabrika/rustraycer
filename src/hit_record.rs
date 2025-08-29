@@ -1,20 +1,21 @@
 use std::sync::Arc;
 
+use crate::aabb::Aabb;
 use crate::material::Material;
 use crate::{vec3d::Vec3d, Point3d};
 use crate::camera::Ray;
 use crate::interval::Interval;
 
 #[derive(Default)]
-pub struct HitRecord {
-    pub point: Point3d,
-    pub normal: Vec3d,
-    t: f32,
-    pub front_face: bool
+pub(crate) struct HitRecord {
+    pub(crate) point: Point3d,
+    pub(crate) normal: Vec3d,
+    pub(crate) t: f32,
+    pub(crate) front_face: bool
 }
 
 impl HitRecord {
-    pub fn set_face_normal(&mut self, r: &Ray, outward_normal: Vec3d) {
+    pub(crate) fn set_face_normal(&mut self, r: &Ray, outward_normal: Vec3d) {
         // See the hit record normal vector
         // Note: outward_normal is assumed to have unit length
         self.front_face = Vec3d::dot(&r.direction, &outward_normal) < 0.0;
@@ -24,6 +25,7 @@ impl HitRecord {
 
 pub trait Hit: Send + Sync {
     fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material>)>;
+    fn bounding_box(&self) -> &Aabb;
 }
 
 pub struct Sphere {
@@ -31,6 +33,7 @@ pub struct Sphere {
     center: Ray,
     radius: f32,
     material: Arc<dyn Material>,
+    bbox: Aabb,
 }
 
 impl Sphere {
@@ -40,17 +43,39 @@ impl Sphere {
 
     pub fn new_dynamic(center: Point3d, center2: Point3d, radius: f32, material: Arc<dyn Material>) -> Sphere {
         let d = center2.as_vec3d() - center.as_vec3d();
+        let rvec = Vec3d::new(radius, radius, radius);
+
+        let center = Ray::new(center, d, None);
+
+        let box1 = Aabb::from_points(
+            &Point3d::from_vec3d(center.at(0.0).as_vec3d() - rvec.clone()),
+            &Point3d::from_vec3d(center.at(0.0).as_vec3d() + rvec.clone()),
+
+        );
         
+        let box2 = Aabb::from_points(
+            &Point3d::from_vec3d(center.at(1.0).as_vec3d() - rvec.clone()),
+            &Point3d::from_vec3d(center.at(1.0).as_vec3d() + rvec.clone()),
+
+        );
+
+        let bbox = Aabb::from_boxes(box1, box2);
+
         Sphere {
-            center: Ray::new(center, d, None),
+            center,
             radius: radius.max(0.0), 
-            material
+            material,
+            bbox
         }
     }
 
 }
 
 impl Hit for Sphere {
+    fn bounding_box(&self) -> &Aabb {
+        &self.bbox
+    }
+
     fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material>)> {
         let current_center = self.center.at(r.tm);
         let oc = current_center.as_vec3d() - r.origin.as_vec3d();
@@ -88,18 +113,24 @@ impl Hit for Sphere {
     } 
 }
 
-#[derive(Default)]
+//#[derive(Default)]
 pub struct HittableList {
-    objects: Vec<Box<dyn Hit>>
+    pub objects: Vec<Box<dyn Hit>>,
+    pub bbox: Aabb,
 }
 
 impl HittableList {
     pub fn add(&mut self, o: Box<dyn Hit>) {
+        self.bbox = Aabb::from_boxes(self.bbox.clone(), o.bounding_box().clone());
         self.objects.push(o);
     }
 }
 
 impl Hit for HittableList {
+    fn bounding_box(&self) -> &Aabb {
+        &self.bbox
+    }
+
     fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material>)> {
         let mut temp_rec = HitRecord::default();
 
