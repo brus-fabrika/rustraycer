@@ -14,10 +14,10 @@ use camera::{Camera, CameraView};
 use config::Settings;
 use hit_record::{HittableList, Sphere};
 use interval::Interval;
-use material::{Dielectric, Lambertian, Material, Metal};
+use material::{Dielectric, Lambertian, Metal};
 use rand::Rng;
 
-use crate::vec3d::Vec3d;
+use crate::{material::MaterialEnum, vec3d::Vec3d};
 
 #[derive(Debug, Default)]
 struct Point3d(Vec3d);
@@ -101,20 +101,23 @@ fn main() {
     // World
     let mut world = HittableList::default();
 
-    let ground_material: Arc<dyn Material> = match c.ground.material.as_str() {
+    let ground_material: Arc<MaterialEnum> = match c.ground.material.as_str() {
         "diffuse" => {
             let diffuse = c.ground.diffuse.expect("Ground diffuse params missing");
-            Arc::new(Lambertian{albedo: Color{r: diffuse.albedo[0], g: diffuse.albedo[1], b: diffuse.albedo[2]}})
+            let l = Lambertian{albedo: Color{r: diffuse.albedo[0], g: diffuse.albedo[1], b: diffuse.albedo[2]}};
+            Arc::new(MaterialEnum::Lambertian(l))
         },
         "metal" => {
             let metal = c.ground.metal.expect("Ground metal params missing");
-            Arc::new(Metal{albedo: Color{r: metal.albedo[0], g: metal.albedo[1], b: metal.albedo[2]}, fuzz: metal.fuzz})
+            let m = Metal{albedo: Color{r: metal.albedo[0], g: metal.albedo[1], b: metal.albedo[2]}, fuzz: metal.fuzz};
+            Arc::new(MaterialEnum::Metal(m))
         },
         "dielectric" => {
             let dielectric = c.ground.dielectric.expect("Ground dielectric params missing");
-            Arc::new(Dielectric{refraction_index: dielectric.refraction})
+            let d = Dielectric{refraction_index: dielectric.refraction};
+            Arc::new(MaterialEnum::Dielectric(d))
         },
-        _ => Arc::new(Lambertian{albedo: Color{r: 0.5, g: 0.5, b: 0.5,}})
+        _ => Arc::new(MaterialEnum::Lambertian(Lambertian{albedo: Color{r: 0.5, g: 0.5, b: 0.5,}}))
     };
 
     let ground_point = Point3d::new(c.ground.center[0], c.ground.center[1], c.ground.center[2]);
@@ -143,7 +146,7 @@ fn main() {
                         
                         world.add(
                             Box::new(
-                                Sphere::new(center, 0.2, Arc::new(Lambertian{albedo}))
+                                Sphere::new(center, 0.2, Arc::new(MaterialEnum::Lambertian(Lambertian{albedo})))
                             )
                         );
                    
@@ -160,7 +163,7 @@ fn main() {
                         
                         world.add(
                             Box::new(
-                                Sphere::new(center, 0.2, Arc::new(Metal{albedo, fuzz}))
+                                Sphere::new(center, 0.2, Arc::new(MaterialEnum::Metal(Metal{albedo, fuzz})))
                             )
                         );
                     },
@@ -168,7 +171,7 @@ fn main() {
                     _ => {
                         world.add(
                             Box::new(
-                                Sphere::new(center, 0.2, Arc::new(Dielectric{refraction_index: 1.5}))
+                                Sphere::new(center, 0.2, Arc::new(MaterialEnum::Dielectric(Dielectric{refraction_index: 1.5})))
                             )
                         );
                     }
@@ -179,19 +182,19 @@ fn main() {
     
     world.add(
         Box::new(
-            Sphere::new(Point3d::new(0.0, 1.0, 0.0), 1.0, Arc::new(Dielectric{refraction_index: 1.5}))
+            Sphere::new(Point3d::new(0.0, 1.0, 0.0), 1.0, Arc::new(MaterialEnum::Dielectric(Dielectric{refraction_index: 1.5})))
         )
     );
     
     world.add(
         Box::new(
-            Sphere::new(Point3d::new(-4.0, 1.0, 0.0), 1.0, Arc::new(Lambertian{albedo: Color{r: 0.4, g: 0.2, b: 0.1}}))
+            Sphere::new(Point3d::new(-4.0, 1.0, 0.0), 1.0, Arc::new(MaterialEnum::Lambertian(Lambertian{albedo: Color{r: 0.4, g: 0.2, b: 0.1}})))
         )
     );
   
     world.add(
         Box::new(
-            Sphere::new(Point3d::new(4.0, 1.0, 0.0), 1.0, Arc::new(Metal{albedo: Color{r: 0.7, g: 0.6, b: 0.5}, fuzz: 0.0}))
+            Sphere::new(Point3d::new(4.0, 1.0, 0.0), 1.0, Arc::new(MaterialEnum::Metal(Metal{albedo: Color{r: 0.7, g: 0.6, b: 0.5}, fuzz: 0.0})))
         )
     );
 
@@ -233,6 +236,9 @@ fn main() {
     let thread_num = if c.multithread_enabled { c.threads } else { 1 };
 
     println!("Running renderer with {thread_num} threads");
+    println!("Rendering image {}x{}, depth {} and {} samples per pixel",
+        camera.image_width, camera.image_height,
+        c.max_depth, c.samples_per_pixel);
 
     Camera::render(camera.clone(), Arc::new(world), thread_num);
 
