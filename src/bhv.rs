@@ -1,15 +1,15 @@
 use std::{cmp::Ordering, sync::Arc};
 
-use crate::{aabb::Aabb, camera::Ray, hit_record::{Hit, HitRecord, HittableList}, interval::Interval, material::Material};
+use crate::{aabb::Aabb, camera::Ray, hit_record::{Hit, HitRecord, Hittable, HittableList}, interval::Interval, material::MaterialEnum};
 
 pub(crate) struct BvhNode {
-    left: Arc<Box<dyn Hit>>,
-    right: Arc<Box<dyn Hit>>,
+    left: Arc<Hittable>,
+    right: Arc<Hittable>,
     bbox: Aabb,
 }
 
 impl Hit for BvhNode {
-    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material>)> {
+    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<MaterialEnum>)> {
         if !self.bbox.hit(r, ray_t.clone()) {
             return None;
         }
@@ -35,7 +35,7 @@ impl Hit for BvhNode {
 
 }
 
-fn box_compare(a: &Box<dyn Hit>, b: &Box<dyn Hit>, axis_index: i32) -> Ordering {
+fn box_compare(a: &Hittable, b: &Hittable, axis_index: i32) -> Ordering {
     if a.bounding_box().axis_interval(axis_index).min < b.bounding_box().axis_interval(axis_index).min - 0.001 {
         Ordering::Less
     } else if a.bounding_box().axis_interval(axis_index).min > b.bounding_box().axis_interval(axis_index).min + 0.001 {
@@ -45,7 +45,7 @@ fn box_compare(a: &Box<dyn Hit>, b: &Box<dyn Hit>, axis_index: i32) -> Ordering 
     }
 }
 
-fn x_axis_comparator(a: &Box<dyn Hit>, b: &Box<dyn Hit>) -> Ordering {
+fn x_axis_comparator(a: &Hittable, b: &Hittable) -> Ordering {
     box_compare(a, b, 0)
 }
 
@@ -62,22 +62,22 @@ impl BvhNode {
         return BvhNode::from_list(&mut hittable_list.objects, 0, x);
     }
 
-    fn from_list(objects: &mut Vec<Box<dyn Hit>>, start: usize, end: usize) -> BvhNode {
-        let axis = 0; // TODO: put random 0-1-2 here
+    fn from_list(objects: &mut Vec<Hittable>, start: usize, end: usize) -> BvhNode {
+        let _axis = 0; // TODO: put random 0-1-2 here
 
-        let mut left = Arc::new(objects[start]);
-        let mut right = Arc::new(objects[start]);
+        let left = Arc::new(objects[start].clone());
+        let mut right = Arc::new(objects[start].clone());
 
         let object_span = end - start;
         match object_span {
             1 => { /*do nothing*/ },
             2 => {
-                right = Arc::new(objects[start + 1]);
+                right = Arc::new(objects[start + 1].clone());
             },
             _ => {
                 // std::sort(std::begin(objects) + start, std::begin(objects)+ end, comparator)
                 objects[start..end].sort_by(x_axis_comparator);
-                let mid = start + object_span / 2;
+                let _mid = start + object_span / 2;
                 // left = make_shared<BvhNode>(objects, start, mid);
                 // right = make_shared<BvhNode>(objects, midm end);
             }

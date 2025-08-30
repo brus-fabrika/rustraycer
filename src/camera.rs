@@ -1,7 +1,7 @@
 use core::f32;
 use std::{sync::{Arc, Mutex}, thread};
 
-use crate::{hit_record::{Hit, HittableList}, interval::Interval, vec3d::Vec3d, Color, Point3d};
+use crate::{hit_record::{Hit, HittableList}, interval::Interval, material::Material, vec3d::Vec3d, Color, Point3d};
 use rand::Rng;
 
 

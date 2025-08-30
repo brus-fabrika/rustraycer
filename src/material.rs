@@ -76,7 +76,19 @@ impl Material for Dielectric {
 
 }
 
+pub enum MaterialEnum {
+    Lambertian(Lambertian),
+    Metal(Metal),
+    Dielectric(Dielectric),
+}
 
-
-
+impl Material for MaterialEnum {
+    fn scatter(&self, ray_in: &Ray, hr: &HitRecord) -> (Ray, Color, bool) {
+        match self {
+            MaterialEnum::Lambertian(lambertian) => lambertian.scatter(ray_in, hr),
+            MaterialEnum::Metal(metal) => metal.scatter(ray_in, hr),
+            MaterialEnum::Dielectric(dielectric) => dielectric.scatter(ray_in, hr),
+        }
+    }
+}
 
