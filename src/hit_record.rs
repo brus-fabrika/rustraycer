@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::material::Material;
+use crate::material::{MaterialEnum};
 use crate::{vec3d::Vec3d, Point3d};
 use crate::camera::Ray;
 use crate::interval::Interval;
@@ -23,23 +23,23 @@ impl HitRecord {
 }
 
 pub trait Hit: Send + Sync {
-    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material>)>;
+    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<MaterialEnum>)>;
 }
 
 pub struct Sphere {
     center: Point3d,
     radius: f32,
-    material: Arc<dyn Material>,
+    material: Arc<MaterialEnum>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3d, radius: f32, material: Arc<dyn Material>) -> Sphere {
+    pub fn new(center: Point3d, radius: f32, material: Arc<MaterialEnum>) -> Sphere {
         Sphere{center, radius, material}
     }
 }
 
 impl Hit for Sphere {
-    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material>)> {
+    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<MaterialEnum>)> {
         let oc = self.center.as_vec3d() - r.origin.as_vec3d();
         let a = r.direction.length_squared();
         let h = Vec3d::dot(&r.direction, &oc);
@@ -77,22 +77,22 @@ impl Hit for Sphere {
 
 #[derive(Default)]
 pub struct HittableList {
-    objects: Vec<Box<dyn Hit>>
+    objects: Vec<Hittable>
 }
 
 impl HittableList {
-    pub fn add(&mut self, o: Box<dyn Hit>) {
+    pub fn add(&mut self, o: Hittable) {
         self.objects.push(o);
     }
 }
 
 impl Hit for HittableList {
-    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<dyn Material>)> {
+    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<MaterialEnum>)> {
         let mut temp_rec = HitRecord::default();
 
         let mut closest_so_far = ray_t.max;
 
-        let mut hit_mat: Option<Arc<dyn Material>> = None;
+        let mut hit_mat: Option<Arc<MaterialEnum>> = None;
 
         for o in self.objects.iter() {
             if let Some((hr, m)) = o.hit(r, Interval{min: ray_t.min, max: closest_so_far}) {
@@ -105,3 +105,17 @@ impl Hit for HittableList {
         hit_mat.map(|mat| (temp_rec, mat))
     } 
 }
+
+pub enum Hittable {
+    Sphere(Sphere),
+    List(HittableList),
+}
+
+impl Hit for Hittable {
+    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<MaterialEnum>)> {
+        match self {
+            Hittable::Sphere(sphere) => sphere.hit(r, ray_t),
+            Hittable::List(list) => list.hit(r, ray_t),
+        }
+    }
+} 
