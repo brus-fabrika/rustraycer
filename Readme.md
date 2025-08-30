@@ -22,4 +22,5 @@ And the another render run for depth 50 and 10 samples per pixel:
 - 25.05.2025 - Image width 1200, max depth 50, sample per pixel 10, ttr -  98s (~ 00:01:38) - 20s Release - 4 threads
 - 25.05.2025 - Image width 1200, max depth 50, sample per pixel 10, ttr -  69s (~ 00:01:09) - 13.3s Release - 8 threads
 - 25.05.2025 - Image width 1200, max depth 50, sample per pixel 10, ttr -  54s (~ 00:01:09) - 10.3s Release - 16 threads
+- 30.08.2025 - Image width 1200, max depth 50, sample per pixel 10, ttr -  44.2s (~ 00:01:09) - 4.8s Release - 16 threads
 
