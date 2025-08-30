@@ -17,7 +17,7 @@ use interval::Interval;
 use material::{Dielectric, Lambertian, Metal};
 use rand::Rng;
 
-use crate::{material::MaterialEnum, vec3d::Vec3d};
+use crate::{hit_record::Hittable, material::MaterialEnum, vec3d::Vec3d};
 
 #[derive(Debug, Default)]
 struct Point3d(Vec3d);
@@ -122,7 +122,7 @@ fn main() {
 
     let ground_point = Point3d::new(c.ground.center[0], c.ground.center[1], c.ground.center[2]);
 
-    world.add(Box::new(Sphere::new(ground_point, c.ground.radius, ground_material)));
+    world.add(Hittable::Sphere(Sphere::new(ground_point, c.ground.radius, ground_material)));
 
     for a in -11 .. 11 {
         for b in -11 .. 11 {
@@ -145,7 +145,7 @@ fn main() {
                         };
                         
                         world.add(
-                            Box::new(
+                            Hittable::Sphere(
                                 Sphere::new(center, 0.2, Arc::new(MaterialEnum::Lambertian(Lambertian{albedo})))
                             )
                         );
@@ -162,7 +162,7 @@ fn main() {
                         let fuzz = rand::rng().random_range(0.0 .. 0.5);
                         
                         world.add(
-                            Box::new(
+                            Hittable::Sphere(
                                 Sphere::new(center, 0.2, Arc::new(MaterialEnum::Metal(Metal{albedo, fuzz})))
                             )
                         );
@@ -170,7 +170,7 @@ fn main() {
                     
                     _ => {
                         world.add(
-                            Box::new(
+                            Hittable::Sphere(
                                 Sphere::new(center, 0.2, Arc::new(MaterialEnum::Dielectric(Dielectric{refraction_index: 1.5})))
                             )
                         );
@@ -181,19 +181,19 @@ fn main() {
     }
     
     world.add(
-        Box::new(
+        Hittable::Sphere(
             Sphere::new(Point3d::new(0.0, 1.0, 0.0), 1.0, Arc::new(MaterialEnum::Dielectric(Dielectric{refraction_index: 1.5})))
         )
     );
     
     world.add(
-        Box::new(
+        Hittable::Sphere(
             Sphere::new(Point3d::new(-4.0, 1.0, 0.0), 1.0, Arc::new(MaterialEnum::Lambertian(Lambertian{albedo: Color{r: 0.4, g: 0.2, b: 0.1}})))
         )
     );
   
     world.add(
-        Box::new(
+        Hittable::Sphere(
             Sphere::new(Point3d::new(4.0, 1.0, 0.0), 1.0, Arc::new(MaterialEnum::Metal(Metal{albedo: Color{r: 0.7, g: 0.6, b: 0.5}, fuzz: 0.0})))
         )
     );
@@ -205,17 +205,17 @@ fn main() {
     let material_bubble = Arc::new(Dielectric{refraction_index: 1.5});
     let material_right = Arc::new(Metal{albedo: Color{r: 0.8, g: 0.6, b: 0.2,}, fuzz: 1.0});
 
-    world.add(Box::new(Sphere::new(Point3d::new(0.0, 0.0, -1.2), 0.5, material_center.clone())));
+    world.add(Sphere::new(Point3d::new(0.0, 0.0, -1.2), 0.5, material_center.clone()));
 
-    world.add(Box::new(Sphere::new(Point3d::new(-1.0, 0.6, -2.0), 0.5, material_center.clone())));
-    world.add(Box::new(Sphere::new(Point3d::new(5.0, 0.6, -5.0), 1.0, material_center.clone())));
+    world.add(Sphere::new(Point3d::new(-1.0, 0.6, -2.0), 0.5, material_center.clone()));
+    world.add(Sphere::new(Point3d::new(5.0, 0.6, -5.0), 1.0, material_center.clone()));
     
-    world.add(Box::new(Sphere::new(Point3d::new(-1.0, 0.0, -1.0), 0.5, material_left.clone())));
-    world.add(Box::new(Sphere::new(Point3d::new(3.0, 0.0, -1.0), 0.4, material_bubble.clone())));
+    world.add(Sphere::new(Point3d::new(-1.0, 0.0, -1.0), 0.5, material_left.clone()));
+    world.add(Sphere::new(Point3d::new(3.0, 0.0, -1.0), 0.4, material_bubble.clone()));
     
-    world.add(Box::new(Sphere::new(Point3d::new(1.0, 0.0, -1.0), 0.5, material_right.clone())));
+    world.add(Sphere::new(Point3d::new(1.0, 0.0, -1.0), 0.5, material_right.clone()));
     
-    world.add(Box::new(Sphere::new(Point3d::new(0.0, -100.5, -1.0), 100.0, material_ground.clone())));
+    world.add(Sphere::new(Point3d::new(0.0, -100.5, -1.0), 100.0, material_ground.clone()));
 */
     // Camera
     let cv = CameraView {

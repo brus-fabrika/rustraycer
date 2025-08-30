@@ -77,11 +77,11 @@ impl Hit for Sphere {
 
 #[derive(Default)]
 pub struct HittableList {
-    objects: Vec<Box<dyn Hit>>
+    objects: Vec<Hittable>
 }
 
 impl HittableList {
-    pub fn add(&mut self, o: Box<dyn Hit>) {
+    pub fn add(&mut self, o: Hittable) {
         self.objects.push(o);
     }
 }
@@ -105,3 +105,17 @@ impl Hit for HittableList {
         hit_mat.map(|mat| (temp_rec, mat))
     } 
 }
+
+pub enum Hittable {
+    Sphere(Sphere),
+    List(HittableList),
+}
+
+impl Hit for Hittable {
+    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<(HitRecord, Arc<MaterialEnum>)> {
+        match self {
+            Hittable::Sphere(sphere) => sphere.hit(r, ray_t),
+            Hittable::List(list) => list.hit(r, ray_t),
+        }
+    }
+} 
