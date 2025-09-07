@@ -2,6 +2,7 @@ use std::{cmp::Ordering, sync::Arc};
 
 use crate::{aabb::Aabb, camera::Ray, hit_record::{Hit, HitRecord, Hittable, HittableList}, interval::Interval, material::MaterialEnum};
 
+#[derive(Clone)]
 pub(crate) struct BvhNode {
     left: Arc<Hittable>,
     right: Arc<Hittable>,
@@ -65,7 +66,7 @@ impl BvhNode {
     fn from_list(objects: &mut Vec<Hittable>, start: usize, end: usize) -> BvhNode {
         let _axis = 0; // TODO: put random 0-1-2 here
 
-        let left = Arc::new(objects[start].clone());
+        let mut left = Arc::new(objects[start].clone());
         let mut right = Arc::new(objects[start].clone());
 
         let object_span = end - start;
@@ -77,7 +78,9 @@ impl BvhNode {
             _ => {
                 // std::sort(std::begin(objects) + start, std::begin(objects)+ end, comparator)
                 objects[start..end].sort_by(x_axis_comparator);
-                let _mid = start + object_span / 2;
+                let mid = start + object_span / 2;
+                left = Arc::new(Hittable::BvhNode(BvhNode::from_list(objects, start, mid)));
+                right = Arc::new(Hittable::BvhNode(BvhNode::from_list(objects, mid, end)));
                 // left = make_shared<BvhNode>(objects, start, mid);
                 // right = make_shared<BvhNode>(objects, midm end);
             }

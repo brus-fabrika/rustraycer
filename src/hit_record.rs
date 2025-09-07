@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::aabb::Aabb;
+use crate::bhv::BvhNode;
 use crate::material::MaterialEnum;
 use crate::{vec3d::Vec3d, Point3d};
 use crate::camera::Ray;
@@ -121,6 +122,15 @@ pub struct HittableList {
 }
 
 impl HittableList {
+    pub fn new(o: Hittable) -> HittableList {
+        let mut hl = HittableList{
+            objects: vec![],
+            bbox: Aabb::default(),
+        };
+        hl.add(o);
+        return hl;
+    }
+    
     pub fn add(&mut self, o: Hittable) {
         self.bbox = Aabb::from_boxes(self.bbox.clone(), o.bounding_box().clone());
         self.objects.push(o);
@@ -155,6 +165,7 @@ impl Hit for HittableList {
 pub enum Hittable {
     Sphere(Sphere),
     List(HittableList),
+    BvhNode(BvhNode),
 }
 
 impl Hit for Hittable {
@@ -162,6 +173,7 @@ impl Hit for Hittable {
         match self {
             Hittable::Sphere(sphere) => sphere.hit(r, ray_t),
             Hittable::List(list) => list.hit(r, ray_t),
+            Hittable::BvhNode(bvhNode) => bvhNode.hit(r, ray_t),
         }
     }
 
@@ -169,6 +181,7 @@ impl Hit for Hittable {
          match self {
             Hittable::Sphere(sphere) => sphere.bounding_box(),
             Hittable::List(list) => list.bounding_box(),
+            Hittable::BvhNode(bvhNode) => bvhNode.bounding_box(),
         }
     }
 }

@@ -20,6 +20,7 @@ use material::{Dielectric, Lambertian, Metal};
 use rand::Rng;
 
 use crate::aabb::Aabb;
+use crate::bhv::BvhNode;
 use crate::{hit_record::Hittable, material::MaterialEnum, vec3d::Vec3d};
 
 #[derive(Debug, Default, Clone)]
@@ -246,6 +247,9 @@ fn main() {
     
     world.add(Sphere::new(Point3d::new(0.0, -100.5, -1.0), 100.0, material_ground.clone()));
 */
+
+    world = HittableList::new(Hittable::BvhNode(BvhNode::new(&mut world)));
+
     // Camera
     let cv = CameraView {
         vfov: 20.0,
