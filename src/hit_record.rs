@@ -28,6 +28,7 @@ pub trait Hit: Send + Sync {
     fn bounding_box(&self) -> &Aabb;
 }
 
+#[derive(Clone)]
 pub struct Sphere {
     //center: Point3d,
     center: Ray,
@@ -113,7 +114,7 @@ impl Hit for Sphere {
     } 
 }
 
-//#[derive(Default)]
+#[derive(Clone)]
 pub struct HittableList {
     pub objects: Vec<Hittable>,
     pub bbox: Aabb,
