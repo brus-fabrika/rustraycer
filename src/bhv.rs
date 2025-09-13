@@ -1,5 +1,7 @@
 use std::{cmp::Ordering, sync::Arc};
 
+use rand::Rng;
+
 use crate::{aabb::Aabb, camera::Ray, hit_record::{Hit, HitRecord, Hittable, HittableList}, interval::Interval, material::MaterialEnum};
 
 #[derive(Clone)]
@@ -50,12 +52,13 @@ fn x_axis_comparator(a: &Hittable, b: &Hittable) -> Ordering {
     box_compare(a, b, 0)
 }
 
-// (HittableList) world = hittable_list(make_shared<bvh_node>(world))
-// ----------------------- new hittable_list( add(world) )
+fn y_axis_comparator(a: &Hittable, b: &Hittable) -> Ordering {
+    box_compare(a, b, 1)
+}
 
-// new bvh_node from world (HittableList)
-// new HittableList from bvh_node (as Hittable Object)
-
+fn z_axis_comparator(a: &Hittable, b: &Hittable) -> Ordering {
+    box_compare(a, b, 2)
+}
 
 impl BvhNode {
     pub(crate) fn new(hittable_list: &mut HittableList) -> BvhNode {
@@ -64,7 +67,6 @@ impl BvhNode {
     }
 
     fn from_list(objects: &mut Vec<Hittable>, start: usize, end: usize) -> BvhNode {
-        let _axis = 0; // TODO: put random 0-1-2 here
 
         let mut left = Arc::new(objects[start].clone());
         let mut right = Arc::new(objects[start].clone());
@@ -76,13 +78,17 @@ impl BvhNode {
                 right = Arc::new(objects[start + 1].clone());
             },
             _ => {
-                // std::sort(std::begin(objects) + start, std::begin(objects)+ end, comparator)
-                objects[start..end].sort_by(x_axis_comparator);
+                let axis = rand::rng().random_range(0 ..= 2);
+                let comp = match axis {
+                    0 => x_axis_comparator,
+                    1 => y_axis_comparator,
+                    _ => z_axis_comparator
+                };
+
+                objects[start..end].sort_by(comp);
                 let mid = start + object_span / 2;
                 left = Arc::new(Hittable::BvhNode(BvhNode::from_list(objects, start, mid)));
                 right = Arc::new(Hittable::BvhNode(BvhNode::from_list(objects, mid, end)));
-                // left = make_shared<BvhNode>(objects, start, mid);
-                // right = make_shared<BvhNode>(objects, midm end);
             }
         }
 

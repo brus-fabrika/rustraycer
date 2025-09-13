@@ -19,11 +19,11 @@ impl Interval {
         Interval::new(f32::NEG_INFINITY, f32::INFINITY)
     }
 
-    pub fn size(&self) -> f32 {
+    pub fn _size(&self) -> f32 {
         self.max - self.min
     }
 
-    pub fn contains(&self, x: f32) -> bool {
+    pub fn _contains(&self, x: f32) -> bool {
         self.min <= x && x <= self.max
     }
 
@@ -41,7 +41,7 @@ impl Interval {
         }
     }
 
-    pub fn expand(&self, delta: f32) -> Interval {
+    pub fn _expand(&self, delta: f32) -> Interval {
         let padding = delta / 2.0; 
         Interval { min: self.min - padding, max: self.max + padding }
     }
@@ -78,10 +78,10 @@ mod tests {
     #[test]
     fn interval_contains() {
         let i = Interval::new(-1.0, 1.0);
-        assert_eq!(true, i.contains(0.0));
-        assert_eq!(true, i.contains(-1.0));
-        assert_eq!(true, i.contains(1.0));
-        assert_eq!(false, i.contains(1.1));
-        assert_eq!(false, i.contains(-1.1));
+        assert_eq!(true, i._contains(0.0));
+        assert_eq!(true, i._contains(-1.0));
+        assert_eq!(true, i._contains(1.0));
+        assert_eq!(false, i._contains(1.1));
+        assert_eq!(false, i._contains(-1.1));
     }
 }

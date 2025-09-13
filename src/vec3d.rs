@@ -78,7 +78,7 @@ impl Vec3d {
         Vec3d{x, y, z}
     }
 
-    pub fn random() -> Vec3d {
+    pub fn _random() -> Vec3d {
         Vec3d::new(
             rand::rng().random_range(0.0..1.0),
             rand::rng().random_range(0.0..1.0),
@@ -132,7 +132,7 @@ impl Vec3d {
         }
     }
 
-    pub fn random_on_hemisphere(normal: &Vec3d) -> Vec3d {
+    pub fn _random_on_hemisphere(normal: &Vec3d) -> Vec3d {
         let p = &Vec3d::random_unit();
         if Self::dot(p, normal) > 0.0 {
             p.clone()

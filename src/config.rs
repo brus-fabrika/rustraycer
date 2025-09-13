@@ -19,7 +19,7 @@ pub(crate) struct Dielectric {
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct Ground {
-    pub(crate) color: [f32; 3],
+    pub(crate) _color: [f32; 3],
     pub(crate) center: [f32; 3],
     pub(crate) radius: f32,
     pub(crate) material: String,

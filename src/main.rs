@@ -48,7 +48,7 @@ impl Point3d {
         Point3d(v)
     }
 
-    fn origin() -> Point3d {
+    fn _origin() -> Point3d {
         Point3d::new(0.0, 0.0, 0.0)
     }
 
@@ -165,18 +165,20 @@ fn main() {
                             b: rand::rng().random::<f32>() * rand::rng().random::<f32>(),
                         };
                         
+                        
                         let c2 = Vec3d::new(
                             0.0,
                             rand::rng().random_range(0.0 .. 0.5),
                             0.0,
                         );
 
-
                         let center2 = Point3d::from_vec3d(center.as_vec3d() + c2);
+                        
                         
                         world.add(
                             Hittable::Sphere(
                                 Sphere::new_dynamic(center, center2, 0.2, Arc::new(MaterialEnum::Lambertian(Lambertian{albedo})))
+                                //Sphere::new(center, 0.2, Arc::new(MaterialEnum::Lambertian(Lambertian{albedo})))
                             )
                         );
                    

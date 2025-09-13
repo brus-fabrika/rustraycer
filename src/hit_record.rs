@@ -173,7 +173,7 @@ impl Hit for Hittable {
         match self {
             Hittable::Sphere(sphere) => sphere.hit(r, ray_t),
             Hittable::List(list) => list.hit(r, ray_t),
-            Hittable::BvhNode(bvhNode) => bvhNode.hit(r, ray_t),
+            Hittable::BvhNode(bvh_node) => bvh_node.hit(r, ray_t),
         }
     }
 
@@ -181,7 +181,7 @@ impl Hit for Hittable {
          match self {
             Hittable::Sphere(sphere) => sphere.bounding_box(),
             Hittable::List(list) => list.bounding_box(),
-            Hittable::BvhNode(bvhNode) => bvhNode.bounding_box(),
+            Hittable::BvhNode(bvh_node) => bvh_node.bounding_box(),
         }
     }
 }
