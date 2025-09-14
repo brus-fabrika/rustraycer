@@ -68,13 +68,18 @@ impl BvhNode {
 
     fn from_list(objects: &mut Vec<Hittable>, start: usize, end: usize) -> BvhNode {
 
-        let mut left = Arc::new(objects[start].clone());
-        let mut right = Arc::new(objects[start].clone());
+        let left;
+        let right;
 
         let object_span = end - start;
         match object_span {
-            1 => { /*do nothing*/ },
+            1 => { 
+                left = Arc::new(objects[start].clone());
+                right = Arc::new(objects[start].clone());
+
+            },
             2 => {
+                left = Arc::new(objects[start].clone());
                 right = Arc::new(objects[start + 1].clone());
             },
             _ => {
@@ -93,6 +98,8 @@ impl BvhNode {
         }
 
         let bbox = Aabb::from_boxes(left.bounding_box().clone(), right.bounding_box().clone());
+        //let obj_span2 = if object_span > 2 {object_span / 2} else { 1};
+        //println!("Creating BvhNode with left objects {}, right objects {} and bounding box {:?}", obj_span2, obj_span2, bbox);
 
         BvhNode {
             left,

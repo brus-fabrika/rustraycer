@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::usize;
 
 use crate::aabb::Aabb;
 use crate::bhv::BvhNode;
@@ -134,6 +135,10 @@ impl HittableList {
     pub fn add(&mut self, o: Hittable) {
         self.bbox = Aabb::from_boxes(self.bbox.clone(), o.bounding_box().clone());
         self.objects.push(o);
+    }
+    
+    pub fn len(&self) -> usize {
+        return self.objects.len();
     }
 }
 

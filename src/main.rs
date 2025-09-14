@@ -116,7 +116,6 @@ fn main() {
     let c = Settings::new().unwrap();
 
     // World
-    //let mut world = HittableList::default();
     let mut world = HittableList {
         objects: vec![],
         bbox: Aabb::default(),
@@ -145,8 +144,12 @@ fn main() {
 
     world.add(Hittable::Sphere(Sphere::new(ground_point, c.ground.radius, ground_material)));
 
-    for a in -11 .. 11 {
-        for b in -11 .. 11 {
+    for a in (-11 .. 11).step_by(1) {
+        for b in (-11 .. 11).step_by(1) {
+            // generate only 20% of objects
+            if rand::rng().random::<f32>() < 0.0 {
+                continue;
+            }
             let choose_mat: f32 = rand::rng().random();
             let center = Point3d::new (
                 a as f32 + 0.9 * rand::rng().random::<f32>(),
@@ -165,20 +168,20 @@ fn main() {
                             b: rand::rng().random::<f32>() * rand::rng().random::<f32>(),
                         };
                         
-                        
+                       /* 
                         let c2 = Vec3d::new(
                             0.0,
                             rand::rng().random_range(0.0 .. 0.5),
                             0.0,
                         );
-
-                        let center2 = Point3d::from_vec3d(center.as_vec3d() + c2);
                         
+                        let center2 = Point3d::from_vec3d(center.as_vec3d() + c2);
+                       */ 
                         
                         world.add(
                             Hittable::Sphere(
-                                Sphere::new_dynamic(center, center2, 0.2, Arc::new(MaterialEnum::Lambertian(Lambertian{albedo})))
-                                //Sphere::new(center, 0.2, Arc::new(MaterialEnum::Lambertian(Lambertian{albedo})))
+                                //Sphere::new_dynamic(center, center2, 0.2, Arc::new(MaterialEnum::Lambertian(Lambertian{albedo})))
+                                Sphere::new(center, 0.2, Arc::new(MaterialEnum::Lambertian(Lambertian{albedo})))
                             )
                         );
                    
@@ -249,7 +252,7 @@ fn main() {
     
     world.add(Sphere::new(Point3d::new(0.0, -100.5, -1.0), 100.0, material_ground.clone()));
 */
-
+    println!("Rendering World with {} hittable objects", world.len());
     world = HittableList::new(Hittable::BvhNode(BvhNode::new(&mut world)));
 
     // Camera

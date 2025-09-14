@@ -196,35 +196,6 @@ impl Camera {
         }
     }
 
-/*
-    pub fn render(&mut self, world: &HittableList) {
-        let mut log_threshold = 0;
-
-        for j in 0 .. self.image_height {
-            let processed = (100.0 * f32::from(j+1) / f32::from(self.image_height)) as i32;
-            if processed >= log_threshold {
-                println!("Scanlines Processed {} ({}%)...", j, processed);
-                log_threshold += 10;
-            }
-            
-            for i in 0 .. self.image_width {
-
-                let mut pixel_color = BLACK_VEC; 
-
-                for _ in 0 .. self.samples_per_pixel {
-                    let r = self.get_ray(i, j);
-                    let pc = Self::ray_color(r, self.max_depth, world);
-                    pixel_color = pixel_color + Vec3d::new(pc.r, pc.g, pc.b);
-                }
-                
-                pixel_color = pixel_color / f32::from(self.samples_per_pixel);
-
-                self.pixels.push(Color { r: pixel_color.x, g: pixel_color.y, b: pixel_color.z });
-            }
-        }
-    }
-*/
-
     fn ray_color(r: Ray, depth: u8, world: &HittableList) -> Color {
         if depth == 0 {
             return BLACK_COLOR; 

@@ -3,7 +3,7 @@
 use crate::interval::Interval;
 use crate::{camera::Ray, Point3d};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct Aabb {
     pub(crate) x: Interval,
     pub(crate) y: Interval,
