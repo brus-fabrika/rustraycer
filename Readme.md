@@ -5,6 +5,7 @@ And the another render run for depth 50 and 10 samples per pixel:
 ![img](rendered_50_10.png)
 
 # Todo list
+- [ ] balance the threads - spread the load not by fixed chanks of the image, but run small chanks over fixed threads. In that way there will be no threads that already finished doing nothing and one thread chewing complex chunk
 - [ ] command line parameters for depth, samples per pixel and file name
 - [ ] re-write Vec3d with non-reference func params
 - [x] implement traits on operators for Vec3d
@@ -24,3 +25,6 @@ And the another render run for depth 50 and 10 samples per pixel:
 - 25.05.2025 - Image width 1200, max depth 50, sample per pixel 10, ttr -  54s (~ 00:01:09) - 10.3s Release - 16 threads
 - 30.08.2025 - Image width 1200, max depth 50, sample per pixel 10, ttr -  44.2s (~ 00:01:09) - 4.8s Release - 16 threads
 - 14.09.2025 - Bounding box implemented, but no change in performance... 
+- 19.09.2025 - So indeed bounding box is faster with more objects involved :)
+    - 1928 objects, 95s vs 46s
+    - 4818 objects, 258 vs 51s

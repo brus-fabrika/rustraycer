@@ -91,6 +91,7 @@ impl BvhNode {
                 };
 
                 objects[start..end].sort_by(comp);
+                
                 let mid = start + object_span / 2;
                 left = Arc::new(Hittable::BvhNode(BvhNode::from_list(objects, start, mid)));
                 right = Arc::new(Hittable::BvhNode(BvhNode::from_list(objects, mid, end)));
@@ -98,8 +99,6 @@ impl BvhNode {
         }
 
         let bbox = Aabb::from_boxes(left.bounding_box().clone(), right.bounding_box().clone());
-        //let obj_span2 = if object_span > 2 {object_span / 2} else { 1};
-        //println!("Creating BvhNode with left objects {}, right objects {} and bounding box {:?}", obj_span2, obj_span2, bbox);
 
         BvhNode {
             left,

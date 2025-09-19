@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_variables, unused_imports)]
 mod config;
 mod camera;
 mod vec3d;
@@ -144,17 +145,17 @@ fn main() {
 
     world.add(Hittable::Sphere(Sphere::new(ground_point, c.ground.radius, ground_material)));
 
-    for a in (-11 .. 11).step_by(1) {
-        for b in (-11 .. 11).step_by(1) {
+    for a in (-110 .. 110).step_by(2) {
+        for b in (-110 .. 110).step_by(5) {
             // generate only 20% of objects
             if rand::rng().random::<f32>() < 0.0 {
                 continue;
             }
             let choose_mat: f32 = rand::rng().random();
             let center = Point3d::new (
-                a as f32 + 0.9 * rand::rng().random::<f32>(),
+                a as f32 * 0.1 + 0.9 * rand::rng().random::<f32>(),
                 0.2,
-                b as f32 + 0.9 * rand::rng().random::<f32>(),
+                b as f32 * 0.1 + 0.9 * rand::rng().random::<f32>(),
             );
             
             let t = center.sub(Point3d::new(4.0, 0.2, 0.0)).as_vec3d();
@@ -248,11 +249,14 @@ fn main() {
     world.add(Sphere::new(Point3d::new(-1.0, 0.0, -1.0), 0.5, material_left.clone()));
     world.add(Sphere::new(Point3d::new(3.0, 0.0, -1.0), 0.4, material_bubble.clone()));
     
-    world.add(Sphere::new(Point3d::new(1.0, 0.0, -1.0), 0.5, material_right.clone()));
+   world.add(Sphere::new(Point3d::new(1.0, 0.0, -1.0), 0.5, material_right.clone()));
     
     world.add(Sphere::new(Point3d::new(0.0, -100.5, -1.0), 100.0, material_ground.clone()));
 */
-    println!("Rendering World with {} hittable objects", world.len());
+
+    //println!("Rendering World with {} hittable objects - no optimization", world.len());
+    
+    println!("Rendering World with {} hittable objects - using bounding box optimization", world.len());
     world = HittableList::new(Hittable::BvhNode(BvhNode::new(&mut world)));
 
     // Camera

@@ -122,14 +122,24 @@ impl Camera {
     fn get_ray(&self, i: u16, j: u16) -> Ray {
         // construct a camera ray originating from the origin and directed at randomly
         // sampled point around the pixel location i, j
-        let offset = self.sample_square();
         
-        let pixel_shift = Vec3d::add(&Vec3d::mul(&self.pixel_delta_u, f32::from(i) + offset.x), &Vec3d::mul(&self.pixel_delta_v, f32::from(j) + offset.y));
+        //let mut rng = rand::rng();
+
+        let offset = self.sample_square(); // random
+        
+        let pixel_shift = Vec3d::add(
+                            &Vec3d::mul(&self.pixel_delta_u, f32::from(i) + offset.x),
+                            &Vec3d::mul(&self.pixel_delta_v, f32::from(j) + offset.y));
+
         let pixel_sample = self.pixel00_loc.as_vec3d() + pixel_shift;
-        let ray_origin = if self.defocus_angle > 0.0 { self.defocus_disk_sample() } else { self.center.clone() };
+        let ray_origin = if self.defocus_angle > 0.0 {
+            self.defocus_disk_sample() // random
+        } else { 
+            self.center.clone()
+        };
         let ray_direction = pixel_sample - ray_origin.as_vec3d();
 
-        Ray::new(ray_origin, ray_direction, Some(rand::rng().random_range(0.0 .. 1.0)))
+        Ray::new(ray_origin, ray_direction, Some(rand::rng().random_range(0.0 .. 1.0))) // random
     }
 
     fn defocus_disk_sample(&self) -> Point3d {
