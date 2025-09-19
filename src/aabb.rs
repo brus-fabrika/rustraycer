@@ -19,6 +19,18 @@ impl Aabb {
         }
     }
 
+    pub(crate) fn universe() -> Self {
+        Aabb::default()
+    }
+
+    pub(crate) fn empty() -> Self {
+        Aabb {
+            x: Interval::empty(),
+            y: Interval::empty(),
+            z: Interval::empty(),
+        }
+    }
+
     pub(crate) fn new(x: Interval, y: Interval, z: Interval) -> Aabb {
         Aabb {
             x: Interval { min: x.min, max: x.max }, 
@@ -49,6 +61,14 @@ impl Aabb {
             1 => &self.y,
             2 => &self.z,
             _ => &self.x
+        }
+    }
+
+    pub(crate) fn longest_axis(&self) -> i32 {
+        if self.x.size() > self.y.size() {
+            if self.x.size() > self.z.size() { 0 } else { 2 }
+        } else {
+            if self.y.size() > self.z.size() { 1 } else { 2 }
         }
     }
 

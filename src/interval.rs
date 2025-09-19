@@ -19,7 +19,11 @@ impl Interval {
         Interval::new(f32::NEG_INFINITY, f32::INFINITY)
     }
 
-    pub fn _size(&self) -> f32 {
+    pub fn empty() -> Interval {
+        Interval::new(f32::INFINITY, f32::NEG_INFINITY)
+    }
+
+    pub fn size(&self) -> f32 {
         self.max - self.min
     }
 

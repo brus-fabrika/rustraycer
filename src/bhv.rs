@@ -71,6 +71,15 @@ impl BvhNode {
         let left;
         let right;
 
+        let mut bbox = Aabb::empty();
+        
+        for o in &objects[start .. end] {
+            bbox = Aabb::from_boxes(bbox, o.bounding_box().clone());
+        }
+        
+        let axis = bbox.longest_axis();
+        
+
         let object_span = end - start;
         match object_span {
             1 => { 
@@ -83,7 +92,7 @@ impl BvhNode {
                 right = Arc::new(objects[start + 1].clone());
             },
             _ => {
-                let axis = rand::rng().random_range(0 ..= 2);
+                //let axis = rand::rng().random_range(0 ..= 2);
                 let comp = match axis {
                     0 => x_axis_comparator,
                     1 => y_axis_comparator,
@@ -98,7 +107,7 @@ impl BvhNode {
             }
         }
 
-        let bbox = Aabb::from_boxes(left.bounding_box().clone(), right.bounding_box().clone());
+        //let bbox = Aabb::from_boxes(left.bounding_box().clone(), right.bounding_box().clone());
 
         BvhNode {
             left,
