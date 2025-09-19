@@ -110,7 +110,7 @@ fn write_color(f: &mut fs::File, c: &Color) {
     writeln!(f, "{ir} {ig} {ib}").expect("Cannot write to file");
 }
 
-
+use raylib::prelude::*;
 
 fn main() {
 
@@ -145,8 +145,8 @@ fn main() {
 
     world.add(Hittable::Sphere(Sphere::new(ground_point, c.ground.radius, ground_material)));
 
-    for a in (-110 .. 110).step_by(2) {
-        for b in (-110 .. 110).step_by(5) {
+    for a in (-110 .. 110).step_by(10) {
+        for b in (-110 .. 110).step_by(10) {
             // generate only 20% of objects
             if rand::rng().random::<f32>() < 0.0 {
                 continue;
@@ -297,6 +297,36 @@ fn main() {
 
     elapsed = now.elapsed();
     println!("Total elapsed: {:.2?}", elapsed);
+    
+    let (mut rl, thread) = raylib::init()
+        .size(camera.image_width as i32, camera.image_height as i32)
+        .title("Hello, World")
+        .build();
+
+    rl.set_target_fps(1);
+
+    while !rl.window_should_close() {
+        let mut d = rl.begin_drawing(&thread);
+
+        d.clear_background(raylib::color::Color::BLACK);
+        //d.draw_text("Hello, world!", 12, 12, 20, raylib::color::Color::BLACK);
+        pixels.iter().enumerate().for_each(|(i, c)| {
+            // apply a linear to gamma transform for gamma 2
+            let r = linear_to_gamma(c.r);
+            let g = linear_to_gamma(c.g);
+            let b = linear_to_gamma(c.b);
+
+            // translate the [0, 1] component values to the byte (color) range [0, 255]
+            let ir = (256.0 * INTENSITY.clamp(r)) as u8;
+            let ig = (256.0 * INTENSITY.clamp(g)) as u8;
+            let ib = (256.0 * INTENSITY.clamp(b)) as u8;
+
+            let x = i as i32 / camera.image_width as i32;
+            let y = i as i32 % camera.image_width as i32;
+
+            d.draw_pixel(y, x, raylib::color::Color::new(ir, ig, ib, 255));
+       });
+    }
 }
 
 
